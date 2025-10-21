@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DigitallyDefined | Action HQ</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Oswald & DM Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Oswald:wght@700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: #F3F4F6;
+        }
+        .font-headline {
+            font-family: 'Oswald', sans-serif;
+        }
+        .bg-dd-orange { background-color: #F18B25; }
+        .text-dd-orange { color: #F18B25; }
+        .border-dd-orange { border-color: #F18B25; }
+        .bg-dd-card { background-color: #FFFFFF; }
+        .text-dd-text { color: #2D3748; }
+
+        #tool-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        /* Dropdown styles */
+        .group .dropdown-menu {
+            display: none;
+        }
+        .group:hover .dropdown-menu, .group:focus-within .dropdown-menu {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-dd-background text-dd-text">
+
+    <div class="w-full h-screen flex flex-col max-w-screen-2xl mx-auto">
+        
+        <header class="bg-dd-card border-b border-gray-200 shadow-sm p-4 w-full z-10">
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div>
+                    <h1 class="font-headline text-2xl uppercase tracking-wider text-gray-800">Digitally<span class="text-dd-orange">Defined</span></h1>
+                    <p class="text-sm text-gray-500">The Action HQ</p>
+                </div>
+                <nav id="main-navigation" class="hidden lg:flex flex-wrap items-center gap-x-2 gap-y-2">
+                    <!-- Desktop navigation with dropdowns injected here -->
+                </nav>
+                <button id="menu-toggle-btn" class="lg:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100">
+                    <i data-lucide="menu"></i>
+                </button>
+            </div>
+            <nav id="mobile-navigation" class="hidden lg:hidden mt-4 flex flex-col space-y-1">
+                 <!-- Mobile navigation with accordions injected here -->
+            </nav>
+        </header>
+
+        <main class="flex-1 bg-gray-200 overflow-hidden">
+            <iframe id="tool-iframe" src="" title="DigitallyDefined Tool"></iframe>
+        </main>
+
+        <footer class="bg-dd-card border-t border-gray-200 p-4 text-center">
+            <p class="font-semibold text-dd-text">This tool is just the start. Get the strategies, support, and accountability you need to build your empire.</p>
+            <a href="#" class="inline-block mt-2 px-6 py-2 bg-dd-orange text-white font-bold uppercase tracking-wider rounded-lg shadow-md hover:bg-opacity-90 transition-colors">Join the DigitallyDefined Community</a>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- CONFIG: YOUR ORGANIZED TOOL SUITE ---
+            // For this to work, all .html files MUST be in the same folder as this dashboard file.
+            const toolCategories = [
+                {
+                    name: 'Content & SEO',
+                    tools: [
+                        { id: 'seo-content-tool', name: 'SEO Content Tool', url: './SEO-content-tool.html' },
+                        { id: 'keyword-power-play', name: 'Keyword Power Play', url: './Keyword-power-play.html' },
+                    ]
+                },
+                {
+                    name: 'Product Lab',
+                    tools: [
+                        { id: 'product-idea-generator', name: 'Idea Generator', url: './Digital-product-idea-generator.html' },
+                        { id: 'product-quiz', name: 'Product Quiz', url: './Digital-product-quiz.html' },
+                        { id: 'product-opportunity-map', name: 'Opportunity Map', url: './Digital-product-opportunity-map.html' },
+                    ]
+                },
+                {
+                    name: 'Financial HQ',
+                    tools: [
+                        { id: 'money-metrics-hq', name: 'Money Metrics HQ', url: './Moneymetricshq.html' },
+                        { id: 'profitability-calculator', name: 'Profitability Calculator', url: './Profitability-calculator.html' },
+                        { id: 'digital-product-profitability', name: 'Digital Product Profitability', url: './Digital-product-profitability.html' },
+                        { id: 'spot-the-profit', name: 'Spot the Profit', url: './Spot-the-profit.html' },
+                        { id: 'digital-tax-calculator', name: 'Tax Calculator', url: './Digital-tax-calculator.html' },
+                        { id: 'digital-reinvention-roi', name: 'Reinvention ROI', url: './Digital-reinvention=roi.html' },
+                    ]
+                },
+                {
+                    name: 'PLR Tools',
+                    tools: [
+                        { id: 'plr-rebrander', name: 'PLR Rebrander', url: './PLR-rebranding-tool.html' },
+                    ]
+                }
+            ];
+            
+            let activeToolId = toolCategories[0].tools[0].id;
+
+            const mainNav = document.getElementById('main-navigation');
+            const mobileNav = document.getElementById('mobile-navigation');
+            const iframe = document.getElementById('tool-iframe');
+            const menuToggleBtn = document.getElementById('menu-toggle-btn');
+
+            function switchTool(toolId) {
+                let foundTool = null;
+                for (const category of toolCategories) {
+                    const tool = category.tools.find(t => t.id === toolId);
+                    if (tool) {
+                        foundTool = tool;
+                        break;
+                    }
+                }
+
+                if (!foundTool) {
+                    console.error("Tool not found:", toolId);
+                    return;
+                }
+                
+                activeToolId = foundTool.id;
+                iframe.src = foundTool.url;
+                updateNavStyles();
+            }
+
+            function updateNavStyles() {
+                 document.querySelectorAll('button[data-tool-id]').forEach(btn => {
+                    if (btn.dataset.toolId === activeToolId) {
+                        btn.classList.add('text-dd-orange', 'font-bold');
+                        btn.classList.remove('text-gray-600');
+                    } else {
+                        btn.classList.remove('text-dd-orange', 'font-bold');
+                        btn.classList.add('text-gray-600');
+                    }
+                });
+            }
+
+            // --- DESKTOP NAV (DROPDOWNS) ---
+            toolCategories.forEach(category => {
+                if (category.tools.length === 1) {
+                    // Single button, no dropdown
+                    const tool = category.tools[0];
+                    const button = document.createElement('button');
+                    button.dataset.toolId = tool.id;
+                    button.className = 'px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 text-gray-600 hover:bg-gray-100';
+                    button.innerHTML = `<span>${category.name}</span>`;
+                    button.addEventListener('click', () => switchTool(tool.id));
+                    mainNav.appendChild(button);
+                } else {
+                    // Dropdown for multiple tools
+                    const dropdownContainer = document.createElement('div');
+                    dropdownContainer.className = 'relative group';
+
+                    const dropdownButton = document.createElement('button');
+                    dropdownButton.className = 'px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 text-gray-600 hover:bg-gray-100 flex items-center gap-1';
+                    dropdownButton.innerHTML = `<span>${category.name}</span> <i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-hover:rotate-180"></i>`;
+                    
+                    const dropdownMenu = document.createElement('div');
+                    dropdownMenu.className = 'dropdown-menu absolute top-full left-0 mt-2 w-64 bg-white rounded-md shadow-lg border border-gray-200 py-1';
+
+                    category.tools.forEach(tool => {
+                        const item = document.createElement('button');
+                        item.dataset.toolId = tool.id;
+                        item.className = 'w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100';
+                        item.textContent = tool.name;
+                        item.addEventListener('click', () => switchTool(tool.id));
+                        dropdownMenu.appendChild(item);
+                    });
+
+                    dropdownContainer.appendChild(dropdownButton);
+                    dropdownContainer.appendChild(dropdownMenu);
+                    mainNav.appendChild(dropdownContainer);
+                }
+            });
+
+            // --- MOBILE NAV (ACCORDION) ---
+            toolCategories.forEach(category => {
+                 if (category.tools.length === 1) {
+                    const tool = category.tools[0];
+                    const button = document.createElement('button');
+                    button.dataset.toolId = tool.id;
+                    button.className = 'w-full text-left px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 text-gray-600 hover:bg-gray-100';
+                    button.innerHTML = `<span>${category.name}</span>`;
+                    button.addEventListener('click', () => {
+                        switchTool(tool.id);
+                        mobileNav.classList.add('hidden');
+                        menuToggleBtn.innerHTML = `<i data-lucide="menu"></i>`;
+                        lucide.createIcons();
+                    });
+                    mobileNav.appendChild(button);
+                 } else {
+                    const accordionContainer = document.createElement('div');
+                    const accordionButton = document.createElement('button');
+                    accordionButton.className = 'w-full flex justify-between items-center px-4 py-2 text-sm font-medium text-left text-gray-600 hover:bg-gray-100 rounded-md';
+                    accordionButton.innerHTML = `<span>${category.name}</span><i data-lucide="chevron-down" class="w-4 h-4 transition-transform"></i>`;
+                    
+                    const accordionPanel = document.createElement('div');
+                    accordionPanel.className = 'hidden pl-4 pt-2 flex flex-col items-start space-y-1';
+                    
+                    category.tools.forEach(tool => {
+                        const item = document.createElement('button');
+                        item.dataset.toolId = tool.id;
+                        item.className = 'w-full text-left px-2 py-2 text-sm text-gray-600 hover:bg-gray-200 rounded-md';
+                        item.textContent = tool.name;
+                        item.addEventListener('click', () => {
+                            switchTool(tool.id);
+                            mobileNav.classList.add('hidden');
+                            menuToggleBtn.innerHTML = `<i data-lucide="menu"></i>`;
+                            lucide.createIcons();
+                        });
+                        accordionPanel.appendChild(item);
+                    });
+
+                    accordionButton.addEventListener('click', () => {
+                        accordionPanel.classList.toggle('hidden');
+                        // FIX: Target the svg element instead of the i element, which gets replaced by the lucide library.
+                        accordionButton.querySelector('svg').classList.toggle('rotate-180');
+                    });
+
+                    accordionContainer.appendChild(accordionButton);
+                    accordionContainer.appendChild(accordionPanel);
+                    mobileNav.appendChild(accordionContainer);
+                 }
+            });
+
+            // --- INITIALIZATION ---
+            switchTool(activeToolId);
+            lucide.createIcons();
+
+            // --- EVENT LISTENERS ---
+            menuToggleBtn.addEventListener('click', () => {
+                const isHidden = mobileNav.classList.toggle('hidden');
+                menuToggleBtn.innerHTML = isHidden ? `<i data-lucide="menu"></i>` : `<i data-lucide="x"></i>`;
+                lucide.createIcons();
+            });
+        });
+    </script>
+</body>
+</html>
