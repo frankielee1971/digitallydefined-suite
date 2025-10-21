@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Asset Tracker - Digitally Defined</title>
+    <!-- ADDED META DESCRIPTION -->
+    <meta name="description" content="Digitally Defined Passive Income & Asset Building Tracker. A roadmap to financial independence and generational wealth for Gen X women.">
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter font - used for headlines and body text -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- Load Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, collection, query, addDoc, setDoc, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Globals (Mandatory Canvas Variables)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db, auth, userId;
+        let isAuthReady = false;
+        let currentStreams = [];
+        let userSettings = {
+            targetExpenses: 60000, // Default for easy start
+            assetMultiplier: 15,   // Default 15x annual revenue (Aggressive)
+        };
+
+        // LLM API Configuration
+        const apiKey = "";
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+        // Utility to generate a unique ID if auth fails
+        const getUserId = () => auth.currentUser?.uid || `anon-${crypto.randomUUID()}`;
+
+        // --- Firebase Initialization and Auth ---
+        window.setupFirebase = async () => {
+            try {
+                // Set Firestore log level for debugging
+                setLogLevel('Debug');
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Sign in using the custom token or anonymously
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // Wait for auth state to be confirmed
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = getUserId();
+                        isAuthReady = true;
+                        // Start listening to data once authenticated
+                        listenToSettings();
+                        listenToIncomeStreams();
+                        console.log("Firebase Auth Ready. User ID:", userId);
+                        document.getElementById('user-id-display').textContent = `User ID: ${userId}`;
+                    } else {
+                        userId = getUserId(); // Fallback to a unique anon ID
+                        isAuthReady = true;
+                        console.log("Firebase Auth Ready. Signed in anonymously. User ID:", userId);
+                        document.getElementById('user-id-display').textContent = `User ID: ${userId} (Anon)`;
+                    }
+                });
+
+            } catch (error) {
+                console.error("Firebase setup failed:", error);
+                // Clean error handling for Canvas environment
+                console.error("Error: Firebase setup failed.");
+            }
+        };
+
+        // --- Gemini API Call with Exponential Backoff ---
+        const fetchWithRetry = async (url, options, maxRetries = 5) => {
+            let attempt = 0;
+            while (attempt < maxRetries) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.status === 429) { // Rate limit exceeded
+                        throw new Error("Rate limit exceeded");
+                    }
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response;
+                } catch (error) {
+                    attempt++;
+                    if (attempt >= maxRetries) {
+                        throw error;
+                    }
+                    const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        };
+
+        window.generateStrategy = async () => {
+            const resultEl = document.getElementById('strategy-output');
+            const name = document.getElementById('streamName').value.trim();
+            const type = document.getElementById('streamType').value;
+            const revenue = parseFloat(document.getElementById('annualRevenue').value);
+            
+            if (!name || isNaN(revenue) || revenue <= 0) {
+                resultEl.innerHTML = `<p class="text-red-600 font-bold p-3">Error: Enter an Asset Name and a positive Annual Revenue first. No excuses!</p>`;
+                return;
+            }
+
+            resultEl.innerHTML = `
+                <div class="flex items-center justify-center p-4">
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-dd-blue" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-dd-blue font-bold">Generating high-leverage strategy...</span>
+                </div>
+            `;
+
+            const userQuery = `Generate a bold, 3-step action plan for a digital asset named "${name}" (a ${type}) to hit an annual revenue of $${revenue.toLocaleString()} USD. Also, suggest the single highest-leverage marketing channel for this specific asset type. The tone must be direct, confident, and action-oriented.`;
+
+            const systemPrompt = "Act as a world-class digital asset strategist. Your analysis must focus on maximizing the 15x asset valuation by prioritizing automation and systems over manual effort. The output must strictly follow the provided JSON schema.";
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            "assetName": { "type": "STRING", "description": "The name of the asset." },
+                            "strategyHeadline": { "type": "STRING", "description": "A bold headline for the strategy." },
+                            "revenueGoal": { "type": "NUMBER", "description": "The target annual revenue." },
+                            "marketingChannel": { "type": "STRING", "description": "The highest leverage marketing channel for this asset type." },
+                            "actionPlan": {
+                                "type": "ARRAY",
+                                "description": "A 3-step action plan focused on leverage and automation.",
+                                "items": { "type": "STRING" }
+                            }
+                        }
+                    }
+                }
+            };
+
+            try {
+                const response = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (!jsonText) {
+                    throw new Error("Gemini returned an empty or malformed response.");
+                }
+
+                const strategy = JSON.parse(jsonText);
+                
+                let actionPlanHtml = strategy.actionPlan.map((step, index) => `
+                    <li class="mb-3">
+                        <strong class="text-dd-red">STEP ${index + 1}:</strong> ${step}
+                    </li>
+                `).join('');
+
+                resultEl.innerHTML = `
+                    <h3 class="text-2xl font-black text-dd-red mb-3 text-center">${strategy.strategyHeadline}</h3>
+                    <p class="text-lg font-bold text-dd-text mb-4 text-center">
+                        Goal: ${formatCurrency(strategy.revenueGoal)} Annual Revenue for ${strategy.assetName}
+                    </p>
+                    <div class="mb-4 p-3 bg-dd-orange/20 rounded-lg border-l-4 border-dd-orange">
+                        <p class="font-bold text-dd-orange">Highest Leverage Channel:</p>
+                        <p class="text-gray-700">${strategy.marketingChannel}</p>
+                    </div>
+                    <ul class="list-none space-y-2 p-0 text-gray-700">
+                        ${actionPlanHtml}
+                    </ul>
+                `;
+
+            } catch (error) {
+                console.error("Gemini API strategy generation error:", error);
+                resultEl.innerHTML = `<p class="text-red-600 font-bold p-3">Error: Could not generate strategy. ${error.message}. Try again.</p>`;
+            }
+        };
+
+        // --- Firestore References ---
+
+        const getStreamsCollectionRef = () => {
+            if (!db || !userId) throw new Error("Database or User ID not initialized.");
+            // Private data path for the user's personal tracker
+            return collection(db, `artifacts/${appId}/users/${userId}/income_streams`);
+        };
+
+        const getSettingsDocRef = () => {
+            if (!db || !userId) throw new Error("Database or User ID not initialized.");
+            // Store user settings in a single document under their user path
+            return doc(db, `artifacts/${appId}/users/${userId}/settings/asset_goals`);
+        };
+
+        // --- Settings Management ---
+
+        const listenToSettings = () => {
+            if (!isAuthReady) return;
+            const docRef = getSettingsDocRef();
+
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    userSettings = { ...userSettings, ...docSnap.data() };
+                }
+                // Always update the input fields to reflect the current setting/default
+                document.getElementById('targetExpenses').value = userSettings.targetExpenses;
+                document.getElementById('assetMultiplier').value = userSettings.assetMultiplier;
+
+                // Rerender everything to apply new settings
+                renderDashboard();
+                generateInsights(currentStreams);
+            }, (error) => {
+                console.error("Error listening to settings: ", error);
+            });
+        };
+
+        window.saveSettings = async (event) => {
+            event.preventDefault();
+            if (!isAuthReady) {
+                console.error("Auth not ready. Cannot save data.");
+                return;
+            }
+
+            const targetExpenses = parseFloat(document.getElementById('targetExpenses').value);
+            const assetMultiplier = parseFloat(document.getElementById('assetMultiplier').value);
+
+            if (isNaN(targetExpenses) || targetExpenses <= 0 || isNaN(assetMultiplier) || assetMultiplier <= 0) {
+                 document.getElementById('settings-status').innerHTML = `<p class="text-red-600 font-bold">Error: Expenses and Multiplier must be positive numbers. No exceptions!</p>`;
+                setTimeout(() => document.getElementById('settings-status').textContent = '', 4000);
+                return;
+            }
+
+            const settingsData = { targetExpenses, assetMultiplier, updatedAt: serverTimestamp() };
+
+            try {
+                // Use setDoc to overwrite or create the single settings document
+                await setDoc(getSettingsDocRef(), settingsData, { merge: true });
+                document.getElementById('settings-status').innerHTML = `<p class="text-dd-blue font-bold">Goal locked in. Own your vision!</p>`;
+                setTimeout(() => document.getElementById('settings-status').textContent = '', 3000);
+            } catch (e) {
+                console.error("Error saving settings: ", e);
+                document.getElementById('settings-status').innerHTML = `<p class="text-red-600 font-bold">Error saving settings. Check console.</p>`;
+            }
+        };
+
+
+        // --- Income Stream Management ---
+
+        window.saveIncomeStream = async (event) => {
+            event.preventDefault();
+            if (!isAuthReady) {
+                console.error("Auth not ready. Cannot save data.");
+                return;
+            }
+
+            const name = document.getElementById('streamName').value.trim();
+            const type = document.getElementById('streamType').value;
+            const revenue = parseFloat(document.getElementById('annualRevenue').value);
+
+            if (!name || !type || isNaN(revenue) || revenue <= 0) {
+                document.getElementById('status-message').innerHTML = `<p class="text-red-600 font-bold">Heads up: Fill out all fields correctly, especially revenue. No excuses!</p>`;
+                setTimeout(() => document.getElementById('status-message').textContent = '', 3000);
+                return;
+            }
+
+            const streamData = {
+                name: name,
+                type: type,
+                annualRevenue: revenue,
+                createdAt: serverTimestamp()
+            };
+
+            try {
+                await addDoc(getStreamsCollectionRef(), streamData);
+                document.getElementById('streamForm').reset();
+                document.getElementById('status-message').innerHTML = `<p class="text-dd-blue font-bold">Success! Asset stream added. Own your power!</p>`;
+                // Clear the strategy box upon saving a new stream
+                document.getElementById('strategy-output').innerHTML = `<p class="text-gray-500 text-center p-4">Ready to generate a strategy? Enter asset details and click the button above.</p>`;
+                setTimeout(() => document.getElementById('status-message').textContent = '', 3000);
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                document.getElementById('status-message').innerHTML = `<p class="text-red-600 font-bold">Error saving data. Check console.</p>`;
+            }
+        };
+
+        // --- Real-time Listener and Rendering ---
+
+        const listenToIncomeStreams = () => {
+            if (!isAuthReady) return;
+
+            const q = query(getStreamsCollectionRef());
+
+            onSnapshot(q, (snapshot) => {
+                currentStreams = [];
+                snapshot.forEach((doc) => {
+                    currentStreams.push({ id: doc.id, ...doc.data() });
+                });
+                renderDashboard();
+                generateInsights(currentStreams);
+            }, (error) => {
+                console.error("Error listening to streams: ", error);
+            });
+        };
+
+        const formatCurrency = (amount) => amount.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 });
+
+
+        // --- Freedom Number Calculation and Rendering ---
+        const renderFreedomTracker = (totalRevenue) => {
+            const trackerEl = document.getElementById('freedom-tracker');
+            const targetExpenses = userSettings.targetExpenses || 1;
+            const assetMultiplier = userSettings.assetMultiplier || 15; // Use the current/default setting
+            const currentAssetValue = totalRevenue * assetMultiplier;
+
+            // Freedom Number: Annual Expenses / 4% (0.04)
+            const freedomNumberGoal = targetExpenses / 0.04;
+            
+            const progressRatio = currentAssetValue / freedomNumberGoal;
+            const progressPercent = Math.min(100, Math.round(progressRatio * 100));
+            
+            let progressClass = 'bg-dd-blue';
+            if (progressPercent >= 100) {
+                progressClass = 'bg-green-600';
+            } else if (progressPercent > 50) {
+                progressClass = 'bg-dd-orange';
+            }
+
+            trackerEl.innerHTML = `
+                <h3 class="text-2xl font-extrabold text-dd-text text-center mb-4">The Freedom Number Tracker</h3>
+                <div class="grid grid-cols-3 gap-4 text-center mb-6">
+                    <div>
+                        <p class="text-sm text-gray-500">Target Expenses</p>
+                        <p class="text-2xl font-black text-dd-text">${formatCurrency(targetExpenses)}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500"><strong>Freedom Number</strong> (Goal)</p>
+                        <p class="text-2xl font-black text-dd-red">${formatCurrency(freedomNumberGoal)}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Current Asset Value</p>
+                        <p class="text-2xl font-black text-dd-blue">${formatCurrency(currentAssetValue)}</p>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-dd-background rounded-xl">
+                    <p class="font-bold text-lg text-dd-text mb-2">Power Progress: ${progressPercent}% Locked In</p>
+                    <div class="w-full bg-gray-200 rounded-full h-3.5">
+                        <div class="h-3.5 rounded-full ${progressClass} transition-all duration-500" style="width: ${progressPercent}%"></div>
+                    </div>
+                </div>
+            `;
+        };
+
+        const renderDashboard = () => {
+            const listEl = document.getElementById('stream-list');
+            const totalEl = document.getElementById('total-annual-revenue');
+            listEl.innerHTML = '';
+
+            let totalRevenue = 0;
+            const assetMultiplier = userSettings.assetMultiplier || 15; // Use the current/default setting
+
+            if (currentStreams.length === 0) {
+                listEl.innerHTML = `
+                    <div class="p-6 text-center text-gray-500 italic bg-gray-50 rounded-lg">
+                        <p>No streams tracked yet. Let's get real: start adding your digital assets!</p>
+                    </div>
+                `;
+            } else {
+                currentStreams.sort((a, b) => (b.annualRevenue || 0) - (a.annualRevenue || 0)); // Sort high to low
+
+                currentStreams.forEach(stream => {
+                    const revenue = stream.annualRevenue || 0;
+                    totalRevenue += revenue;
+                    const estimatedAssetValue = revenue * assetMultiplier; // Use dynamic multiplier
+
+                    const listItem = document.createElement('li');
+                    listItem.className = 'flex justify-between items-center p-4 mb-2 bg-white shadow-lg rounded-xl border-l-4 border-dd-blue';
+                    listItem.innerHTML = `
+                        <div>
+                            <p class="font-inter font-bold text-lg text-dd-text">${stream.name} <span class="text-sm font-normal text-dd-orange">(${stream.type})</span></p>
+                            <p class="text-sm text-gray-500">Est. Asset Value: ${formatCurrency(estimatedAssetValue)} (@${assetMultiplier}x)</p>
+                        </div>
+                        <p class="font-inter font-extrabold text-xl text-dd-text">${formatCurrency(revenue)}</p>
+                    `;
+                    listEl.appendChild(listItem);
+                });
+            }
+
+            totalEl.textContent = formatCurrency(totalRevenue);
+            renderFreedomTracker(totalRevenue); // Update the new tracker section
+        };
+
+        // --- Insights Generation ---
+
+        const generateInsights = (streams) => {
+            const insightsEl = document.getElementById('data-driven-insights');
+            if (!streams || streams.length === 0) {
+                insightsEl.innerHTML = `
+                    <h3 class="text-xl font-bold mb-2 text-dd-text text-center">Data-Driven Insights: Waiting on your data...</h3>
+                    <p class="text-gray-600 text-center">Enter a stream to unlock your leverage points.</p>
+                `;
+                return;
+            }
+
+            // Find the most profitable stream
+            const totalRevenue = streams.reduce((acc, s) => acc + (s.annualRevenue || 0), 0);
+            const topStream = streams.reduce((max, stream) => (stream.annualRevenue > max.annualRevenue ? stream : max), { annualRevenue: -Infinity, name: "N/A" });
+
+            let insightMessage = '';
+            let strategyTip = '';
+
+            if (topStream.annualRevenue > 5000) {
+                const percentage = Math.round((topStream.annualRevenue / totalRevenue) * 100);
+                insightMessage = `<span class="text-dd-orange font-extrabold">${topStream.name}</span> is killing it, contributing ${percentage}% of your total revenue.`;
+                strategyTip = `<strong>Scaling Tip</strong>: This stream is your cash cow. Automate 80% of its delivery or creation process immediately. Document every step—that's how you turn a cash flow into a <strong>sellable asset</strong>!`;
+            } else if (streams.length > 2) {
+                insightMessage = `You've got ${streams.length} distinct streams. That diversification is smart.`;
+                strategyTip = `<strong>Leverage Tip</strong>: Now, look for the <strong>overlap</strong>. Can you bundle two assets together? Can the audience from the Affiliate stream be channeled into the Subscription stream? Focus on *leverage*, not just activity.`;
+            } else {
+                insightMessage = `You're just getting started with ${topStream.name}. You've taken the first step—no more excuses!`;
+                strategyTip = `<strong>Next Step</strong>: Your first stream is live. Now, focus on the "A" in L-A-V-E-R-A-G-E: <strong>Automation</strong>. How can you make this stream run while you sleep? Get real, it's about minimizing effort for maximum gain.`;
+            }
+
+            insightsEl.innerHTML = `
+                <h3 class="text-xl font-extrabold mb-2 text-dd-text text-center">Let's Get Real About Your Leverage</h3>
+                <p class="text-lg mb-4 text-dd-blue text-center">${insightMessage}</p>
+                <div class="p-4 bg-dd-background rounded-xl border-l-4 border-red-600 shadow-md">
+                    <p class="text-gray-700">${strategyTip}</p>
+                </div>
+            `;
+        };
+
+        // Initialize on load
+        window.onload = setupFirebase;
+
+    </script>
+
+    <style>
+        /* Configure Tailwind using custom colors */
+        @layer utilities {
+            .text-shadow-dd {
+                text-shadow: 2px 2px #f18b25; /* Light shadow for emphasis */
+            }
+        }
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'dd-orange': '#F18B25',
+                        'dd-blue': '#47B7D4',
+                        'dd-red': '#C20F0A',
+                        'dd-background': '#FFFCF9',
+                        'dd-text': '#2D3748',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-dd-background font-inter text-dd-text p-4 sm:p-8 min-h-screen">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <header class="mb-8 p-6 bg-dd-blue rounded-2xl shadow-xl border-b-4 border-dd-orange">
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-white leading-tight text-center">
+                Your Digital Empire: <span class="text-dd-orange">Asset Builder</span>
+            </h1>
+            <p class="text-xl text-white mt-2 font-medium text-center">
+                — For Gen X Women Who Are Ready to <strong>Own Their Power</strong>
+            </p>
+            <p id="user-id-display" class="text-xs text-dd-text mt-2"></p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- COLUMN 1: Input & Insights -->
+            <div class="lg:col-span-1 space-y-8">
+
+                <!-- Asset Goal Setter / Settings Form -->
+                <div class="bg-white p-6 rounded-2xl shadow-2xl border-t-4 border-dd-red">
+                    <h2 class="text-2xl font-bold mb-4 text-dd-text text-center">Set Your Freedom Goal</h2>
+                    <form id="settingsForm" onsubmit="saveSettings(event)">
+                        <div class="mb-4">
+                            <label for="targetExpenses" class="block text-sm font-medium text-dd-text mb-1">Target Annual Expenses ($)</label>
+                            <input type="number" id="targetExpenses" name="targetExpenses" step="1000" required class="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-dd-red focus:ring-dd-red transition" placeholder="60000">
+                        </div>
+                        <div class="mb-6">
+                            <label for="assetMultiplier" class="block text-sm font-medium text-dd-text mb-1">Asset Multiplier (E.g., 15 for 15x Annual Revenue)</label>
+                            <input type="number" id="assetMultiplier" name="assetMultiplier" step="1" required class="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-dd-red focus:ring-dd-red transition" placeholder="10">
+                        </div>
+                        <button type="submit" class="w-full bg-dd-red text-white py-3 rounded-xl font-extrabold text-lg shadow-xl hover:bg-dd-orange transition duration-300 transform hover:scale-[1.02]">
+                            Lock In Goal & Calculate Freedom
+                        </button>
+                    </form>
+                    <div id="settings-status" class="mt-4 text-center"></div>
+                </div>
+
+                <!-- Income Stream Input Form -->
+                <div class="bg-white p-6 rounded-2xl shadow-2xl border-t-4 border-dd-orange">
+                    <!-- CENTERED HEADING -->
+                    <h2 class="text-2xl font-bold mb-4 text-dd-text text-center">Lock It In: New Income Stream</h2>
+                    <form id="streamForm" onsubmit="saveIncomeStream(event)">
+                        <div class="mb-4">
+                            <label for="streamName" class="block text-sm font-medium text-dd-text mb-1">Asset Name (e.g., Etsy Template Shop)</label>
+                            <input type="text" id="streamName" name="streamName" required class="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-dd-blue focus:ring-dd-blue transition" placeholder="Give your stream a confident name">
+                        </div>
+                        <div class="mb-4">
+                            <label for="streamType" class="block text-sm font-medium text-dd-text mb-1">Stream Type</label>
+                            <select id="streamType" name="streamType" required class="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-dd-blue focus:ring-dd-blue transition">
+                                <option value="Digital Product Sales">Digital Product Sales</option>
+                                <option value="Affiliate Marketing">Affiliate Marketing</option>
+                                <option value="Subscription Service">Subscription Service</option>
+                                <option value="Ad Revenue/Sponsorship">Ad Revenue/Sponsorship</option>
+                                <option value="Other Passive Asset">Other Passive Asset</option>
+                            </select>
+                        </div>
+                        <div class="mb-6">
+                            <label for="annualRevenue" class="block text-sm font-medium text-dd-text mb-1">Target/Current Annual Revenue ($)</label>
+                            <input type="number" id="annualRevenue" name="annualRevenue" step="0.01" required class="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-dd-blue focus:ring-dd-blue transition" placeholder="10000.00">
+                        </div>
+                        
+                        <!-- GEMINI API BUTTON -->
+                        <button type="button" onclick="generateStrategy()" class="w-full bg-dd-blue text-white py-3 mb-4 rounded-xl font-extrabold text-lg shadow-xl hover:bg-dd-orange transition duration-300 transform hover:scale-[1.02]">
+                            Generate 3-Step Strategy ✨
+                        </button>
+
+                        <button type="submit" class="w-full bg-dd-orange text-white py-3 rounded-xl font-extrabold text-lg shadow-xl hover:bg-dd-red transition duration-300 transform hover:scale-[1.02]">
+                            Lock It In & Own Your Power
+                        </button>
+                    </form>
+                    <div id="status-message" class="mt-4 text-center"></div>
+                </div>
+
+                <!-- Gemini Strategy Output -->
+                <div class="bg-white p-6 rounded-2xl shadow-2xl border-t-4 border-dd-red">
+                    <h2 class="text-2xl font-bold mb-4 text-dd-text text-center">High-Leverage Strategy Blueprint</h2>
+                    <div id="strategy-output" class="p-4 bg-dd-background rounded-xl border-l-4 border-dd-blue">
+                         <p class="text-gray-500 text-center p-4">Ready to generate a strategy? Enter asset details and click the button above.</p>
+                    </div>
+                </div>
+
+
+                <!-- Data-Driven Insights -->
+                <div class="bg-white p-6 rounded-2xl shadow-2xl border-t-4 border-dd-blue">
+                    <div id="data-driven-insights">
+                        <!-- Content generated by generateInsights(streams) -->
+                        <h3 class="text-xl font-bold mb-2 text-dd-text text-center">Data-Driven Insights: Waiting on your data...</h3>
+                        <p class="text-gray-600 text-center">Enter a stream to unlock your leverage points.</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- COLUMN 2 & 3: Dashboard and Alignment -->
+            <div class="lg:col-span-2 space-y-8">
+
+                <!-- Freedom Number Tracker (NEW) -->
+                <div id="freedom-tracker" class="bg-dd-blue/10 p-6 rounded-2xl shadow-2xl border-t-4 border-dd-red">
+                    <!-- Content generated by renderFreedomTracker(totalRevenue) -->
+                    <h3 class="text-2xl font-extrabold text-dd-text text-center mb-4">The Freedom Number Tracker</h3>
+                    <p class="text-center text-gray-500">Set your goal on the left to activate your roadmap.</p>
+                </div>
+
+
+                <!-- Income Stream Dashboard -->
+                <div class="bg-white p-6 rounded-2xl shadow-2xl border-t-4 border-dd-blue">
+                    <h2 class="text-3xl font-extrabold mb-4 text-dd-text flex justify-between items-center">
+                        Income Stream Dashboard
+                        <span class="text-lg font-normal text-dd-text">(Revenue & Asset Potential)</span>
+                    </h2>
+
+                    <div class="p-4 bg-dd-orange/20 rounded-xl mb-6 shadow-inner border-l-4 border-dd-orange">
+                        <p class="text-xl font-medium text-dd-text">Total Annual Revenue Goal/Current:</p>
+                        <p id="total-annual-revenue" class="text-4xl font-black text-dd-red mt-1">$0</p>
+                    </div>
+
+                    <ul id="stream-list" class="space-y-3">
+                        <!-- Income stream items will be rendered here -->
+                    </ul>
+                </div>
+
+                <!-- Retirement Alignment Tools / Roadmap -->
+                <div class="bg-white p-6 rounded-2xl shadow-2xl border-t-4 border-dd-red">
+                    <!-- CHANGED: Injected DD Red into the main headline -->
+                    <h2 class="text-3xl font-extrabold mb-4 text-dd-text text-center">
+                        No More Excuses: <span class="text-dd-red">Asset Alignment</span>
+                    </h2>
+
+                    <p class="text-lg text-gray-600 mb-6 text-center">This isn't just cash flow; it's generational wealth. Use these prompts to ensure your digital asset roadmap aligns with your long-term financial security.</p>
+
+                    <div class="space-y-4">
+                        <div class="p-4 bg-dd-background rounded-lg border-l-4 border-dd-orange">
+                            <!-- CHANGED: H3 uses DD Orange and action word is BOLD -->
+                            <h3 class="font-bold text-lg text-dd-orange">Roadmap Focus: Build-to-Sell Mindset</h3>
+                            <p class="text-gray-700 mt-1">
+                                Are the systems for my top income stream documented and repeatable? If I sold this tomorrow, would the buyer need me, or would the automation hold up? <strong class="text-dd-orange">Focus on leverage.</strong>
+                            </p>
+                        </div>
+                        <div class="p-4 bg-dd-background rounded-lg border-l-4 border-dd-blue">
+                            <!-- CHANGED: H3 uses DD Blue and action word is BOLD -->
+                            <h3 class="font-bold text-lg text-dd-blue">Financial Planner Prompt: Risk & Integration</h3>
+                            <p class="text-gray-700 mt-1">
+                                How should I structure my digital asset revenue (e.g., LLC vs. Sole Prop) to minimize tax liability and maximize retirement contributions? Ask about <strong class="text-dd-blue">accelerated wealth strategies</strong> for Gen X.
+                            </p>
+                        </div>
+                        <div class="p-4 bg-dd-background rounded-lg border-l-4 border-dd-red">
+                            <!-- CHANGED: H3 uses DD Red and action word is BOLD -->
+                            <h3 class="font-bold text-lg text-dd-red">Generational Wealth Check: The Legacy</h3>
+                            <p class="text-gray-700 mt-1">
+                                What is the clear, written plan for transferring my digital assets (websites, accounts, IP) to my sons? <strong class="text-dd-red">Define your legacy</strong>—don't leave a mess.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PLR Content & Rebranding Tool (V2)</title>
+  <style>
+    /* Updated Imports: DM Sans for body, Inter 700 for headers */
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Inter:wght@700&display=swap');
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #FFFCF9;
+      color: #2D3748;
+      padding: 20px;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    /* H1 Style: Inter Bold, DD Orange, Uppercase - ADDED TEXT SHADOW */
+    h1 {
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #F18B25; /* DD Orange */
+      text-align: center;
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      /* 🔥 New Shadow Effect: Subtle lift for dimension */
+      text-shadow: 2px 2px 4px rgba(45, 55, 72, 0.3); 
+    }
+    /* H2 Style: Inter Bold, DD Blue */
+    h2 {
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      text-align: center;
+      color: #47B7D4;
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+    }
+    
+    /* 🔥 New Style for the Mission/Instruction Toggle Box */
+    .mission-box {
+        background: #FFFFFF;
+        border: 2px solid #47B7D4; /* DD Blue border */
+        padding: 0; 
+        margin-bottom: 25px;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(71, 183, 212, 0.2); /* Soft blue glow */
+        width: 100%;
+        max-width: 600px;
+        text-align: center;
+    }
+    
+    /* Style the summary (the clickable header) */
+    .mission-box summary {
+        list-style: none; /* Hide default arrow */
+        padding: 15px 25px;
+        border-radius: 10px 10px 0 0;
+        position: relative;
+        cursor: pointer;
+        user-select: none;
+        background: #e6f6fa; /* Light blue background for summary */
+        border-bottom: 1px solid #47B7D4;
+        display: block;
+    }
+    
+    /* Custom arrow icon using content property */
+    .mission-box summary::before {
+        content: '▼'; /* Down arrow */
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        transition: transform 0.2s;
+        font-size: 0.8rem;
+        color: #C20F0A;
+    }
+
+    /* Change arrow to up when box is open */
+    .mission-box[open] summary::before {
+        content: '▲'; /* Up arrow */
+    }
+
+    /* H3 style inside the summary */
+    .mission-box h3 {
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        color: #C20F0A; /* DD Accent Red */
+        font-size: 1.25rem;
+        margin: 0;
+        text-transform: uppercase;
+        display: inline-block;
+    }
+    
+    /* Content area styling */
+    .mission-content {
+        padding: 25px;
+        text-align: center;
+    }
+    .mission-content p {
+        font-size: 1.1rem;
+        line-height: 1.5;
+        margin: 0 0 10px 0;
+    }
+    .mission-content p:last-child {
+        margin-bottom: 0;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 15px;
+      color: #2D3748;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 12px;
+      margin-top: 8px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      background: #FFFFFF;
+      transition: all 0.2s ease-in-out;
+      box-sizing: border-box;
+      font-family: 'DM Sans', sans-serif;
+      color: #2D3748;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #F18B25;
+      box-shadow: 0 0 0 3px rgba(241, 139, 37, 0.25);
+    }
+    .section {
+      background: #FFFFFF;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      width: 100%;
+      max-width: 600px;
+    }
+    .button-container {
+      text-align: center;
+      margin-top: 25px;
+    }
+    button {
+      background: #F18B25;
+      color: white;
+      padding: 14px 28px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-family: 'DM Sans', sans-serif;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+      letter-spacing: 1px;
+    }
+    button:hover {
+      background: #e07b1d;
+    }
+    button:active {
+      transform: scale(0.98);
+    }
+    #messageBox {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #2D3748;
+      color: white;
+      padding: 20px 30px;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      display: none;
+      text-align: center;
+      font-weight: bold;
+    }
+    @media (max-width: 768px) {
+      body {
+        padding: 15px;
+      }
+      h1 {
+        font-size: 2rem;
+      }
+      .section {
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🚀 PLR Content & Rebranding Tool</h1>
+
+  <!-- 🔥 NEW MISSION BOX FOR GEN X WOMEN (TOGGLE) -->
+  <details class="mission-box" open>
+    <summary>
+      <h3>LET'S GET REAL, GEN X. NO MORE EXCUSES.</h3>
+    </summary>
+    <div class="mission-content">
+      <p>This tool is your <strong>automation engine</strong> for building digital real estate. It takes weak, generic PLR and transforms it into <strong>high-converting assets</strong> that match your unique voice and are optimized for search traffic.</p>
+      <p style="margin-top: 10px;">Stop trading time for money. <strong>Own your power.</strong> Start building your legacy now.</p>
+    </div>
+  </details>
+  <!-- 🔥 END MISSION BOX (TOGGLE) -->
+
+  <div class="section">
+    <h2>🧬 Brand Kit</h2>
+    <label>Brand Name</label><input type="text" id="brandName" placeholder="e.g., Digitally Defined">
+    <label>Brand Voice</label><textarea id="brandVoice" rows="3" placeholder="e.g., Direct, Empowering, High-energy..."></textarea>
+    <label>Mission Statement</label><textarea id="mission" rows="3" placeholder="Your brand's core purpose..."></textarea>
+    <label>Vision Statement</label><textarea id="vision" rows="3" placeholder="The future your brand is creating..."></textarea>
+    <label>Core Values (comma-separated)</label><input type="text" id="coreValues" placeholder="e.g., Action, Clarity, No Excuses">
+    <label>Visual Style Keywords</label><input type="text" id="visualStyle" placeholder="e.g., Bold, Clean, Energetic">
+  </div>
+
+  <div class="section">
+    <h2>📦 PLR Input</h2>
+    <label>Mode</label>
+    <select id="mode">
+      <option value="rewrite">Rewrite Uploaded PLR</option>
+      <option value="generate">Generate Fresh PLR</option>
+    </select>
+    <label>Upload PLR File</label><input type="file" id="plrFile">
+    <label>Rewrite Goal</label><textarea id="rewriteGoal" rows="3" placeholder="What's the #1 goal for this rewrite? (e.g., Target pain point X, drive sales to Y)"></textarea>
+  </div>
+  
+  <div class="section">
+    <h2>🎯 SEO & Traffic Blueprint</h2>
+    <label>Primary Keyword</label><input type="text" id="primaryKeyword" placeholder="The single keyword that will bring in the cash (e.g., digital real estate investing)">
+    <label>Secondary Keywords (comma-separated)</label><input type="text" id="secondaryKeywords" placeholder="Supporting phrases to sprinkle naturally (e.g., passive income ideas, online assets)">
+    
+    <label>Optimization Mode</label>
+    <select id="seoOptimizationMode">
+      <option value="balanced">Balanced (The Smart Way)</option>
+      <option value="keyword-rich">Keyword-Rich (Aggressive Density)</option>
+      <option value="natural-flow">Natural-Flow (Readability First)</option>
+    </select>
+
+    <label>Meta Title (Max 60 Chars)</label><input type="text" id="metaTitle" placeholder="SEO title optimized for clicks and keyword relevance">
+    <label>Meta Description (Max 160 Chars)</label><textarea id="metaDescription" rows="2" placeholder="The high-converting description that forces people to click"></textarea>
+    <label>URL Slug Suggestion</label><input type="text" id="slug" placeholder="e.g., gen-x-digital-real-estate">
+  </div>
+
+  <div class="section">
+    <h2>🧠 Fresh PLR Generation</h2>
+    <label>Target Audience</label><input type="text" id="audience" placeholder="e.g., Gen X women entrepreneurs">
+    <label>Content Format</label><select id="format">
+      <option value="guide">Guide</option>
+      <option value="checklist">Checklist</option>
+      <option value="email">Email Sequence</option>
+      <option value="workbook">Workbook</option>
+    </select>
+    <label>Tone & Style</label><input type="text" id="tone" placeholder="e.g., Action-oriented, Cheeky">
+    <label>Call to Action</label><input type="text" id="cta" placeholder="What action should they take next?">
+  </div>
+
+  <div class="section">
+    <h2>🎨 Cover Image</h2>
+    <label>Cover Mode</label>
+    <select id="coverMode">
+      <option value="generate">Generate Cover</option>
+      <option value="upload">Upload Your Own</option>
+    </select>
+    <label>Upload Cover Image</label><input type="file" id="coverUpload">
+    <label>Title Text</label><input type="text" id="coverTitle" placeholder="The Unbeatable Guide to...">
+    <label>Subtitle Text</label><input type="text" id="coverSubtitle" placeholder="Your No-BS Blueprint...">
+    <label>Style Keywords</label><input type="text" id="coverStyle" placeholder="e.g., Minimal, Bold Typography, Orange">
+  </div>
+
+  <div class="section">
+    <h2>⚙️ Output Preferences</h2>
+    <label>Output Format</label><select id="outputFormat">
+      <option value="pdf">PDF</option>
+      <option value="docx">DOCX</option>
+      <option value="txt">TXT</option>
+    </select>
+    <label>Length</label><select id="length">
+      <option value="short">Short-form (1–2 pages)</option>
+      <option value="long">Long-form (5+ pages)</option>
+    </select>
+    <label>Content Structure</label>
+    <select id="contentStructure">
+      <option value="html-seo">HTML/SEO Headings (H1-H6)</option>
+      <option value="plain-text-structure">Plain Text Sections (No Tags)</option>
+    </select>
+    <label>Include Visual Prompts</label><select id="visualPrompts">
+      <option value="true">Yes</option>
+      <option value="false">No</option>
+    </select>
+    <label>Resell Ready</label><select id="resellReady">
+      <option value="true">Yes</option>
+      <option value="false">No</option>
+    </select>
+  </div>
+
+  <div class="button-container">
+    <button onclick="generatePLR()">🔥 Rebrand My PLR!</button>
+  </div>
+
+  <div id="messageBox"></div>
+
+  <script>
+    function showMessage(message) {
+      const messageBox = document.getElementById('messageBox');
+      messageBox.textContent = message;
+      messageBox.style.display = 'block';
+      setTimeout(() => {
+        messageBox.style.display = 'none';
+      }, 3000);
+    }
+
+    function generatePLR() {
+      const payload = {
+        brand_kit: {
+          brand_name: document.getElementById('brandName').value,
+          brand_voice: document.getElementById('brandVoice').value,
+          mission: document.getElementById('mission').value,
+          vision: document.getElementById('vision').value,
+          core_values: document.getElementById('coreValues').value.split(',').map(v => v.trim()).filter(v => v.length > 0),
+          visual_style_keywords: document.getElementById('visualStyle').value.split(',').map(v => v.trim()).filter(v => v.length > 0)
+        },
+        plr_input: {
+          mode: document.getElementById('mode').value,
+          uploaded_file: document.getElementById('plrFile').files[0]?.name || null,
+          rewrite_goal: document.getElementById('rewriteGoal').value
+        },
+        // **SEO PAYLOAD OBJECT**
+        seo_blueprint: {
+          primary_keyword: document.getElementById('primaryKeyword').value,
+          secondary_keywords: document.getElementById('secondaryKeywords').value.split(',').map(v => v.trim()).filter(v => v.length > 0),
+          optimization_mode: document.getElementById('seoOptimizationMode').value,
+          meta_title: document.getElementById('metaTitle').value,
+          meta_description: document.getElementById('metaDescription').value,
+          slug: document.getElementById('slug').value
+        },
+        // **UPDATED GENERATION INPUT**
+        generation_input: {
+          target_audience: document.getElementById('audience').value,
+          content_format: document.getElementById('format').value,
+          tone_style: document.getElementById('tone').value,
+          call_to_action: document.getElementById('cta').value
+        },
+        cover_image: {
+          mode: document.getElementById('coverMode').value,
+          uploaded_image: document.getElementById('coverUpload').files[0]?.name || null,
+          title_text: document.getElementById('coverTitle').value,
+          subtitle_text: document.getElementById('coverSubtitle').value,
+          style_keywords: document.getElementById('coverStyle').value.split(',').map(v => v.trim()).filter(v => v.length > 0)
+        },
+        output_preferences: {
+          format: document.getElementById('outputFormat').value,
+          length: document.getElementById('length').value,
+          content_structure: document.getElementById('contentStructure').value, /* 🔥 NEW: Content Structure Preference */
+          include_visual_prompts: document.getElementById('visualPrompts').value === "true",
+          resell_ready: document.getElementById('resellReady').value === "true"
+        }
+      };
+
+      console.log("🚀 Rebranding Payload:", payload);
+      showMessage("Let's get real. Your rebranded PLR is generating. Check the console for the payload.");
+    }
+  </script>
+
+</body>
+</html>

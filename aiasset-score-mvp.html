@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssetAI Score - Digital Due Diligence</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Brand Colors for High-Impact Styling */
+        :root {
+            --color-primary: #F18B25; /* DD Orange */
+            --color-secondary: #47B7D4; /* DD Blue */
+            --color-accent: #C20F0A; /* Accent Red */
+            --color-background: #FFFCF9; /* Clean Canvas */
+            --color-text: #2D3748; /* Readable Text */
+            --color-card: #FFFFFF;
+        }
+
+        /* Typography - UPDATED to use Inter-like stack */
+        .font-body { 
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; 
+        }
+
+        /* Custom Styles for Blur and Gate */
+        .gated-content-blur {
+            filter: blur(8px);
+            pointer-events: none;
+            user-select: none;
+            transition: filter 0.5s ease-in-out;
+        }
+
+        /* Lifted H1 Title Effect (Primary, largest shadow) */
+        .h1-lifted {
+            text-shadow: 2px 2px 0px rgba(71, 183, 212, 0.5), 4px 4px 0px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Generalized Lifted Heading Effect (Applied to H2/H3 for consistency) */
+        .heading-lifted {
+            text-shadow: 1px 1px 0px rgba(71, 183, 212, 0.4), 2px 2px 0px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* CTA Text Shadow for visibility (White on Orange CTA) */
+        .cta-text-shadow {
+            text-shadow: 0 0 2px var(--color-text), 0 0 2px var(--color-text); /* Creates a sharp outline around the white text */
+        }
+
+        /* Pulsating CTA Animation */
+        @keyframes pulse-cta {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 139, 37, 0.7); }
+            70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(241, 139, 37, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 139, 37, 0); }
+        }
+
+        .cta-pulsate {
+            animation: pulse-cta 2s infinite;
+        }
+
+        /* Modal Backdrop */
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.75);
+        }
+    </style>
+</head>
+<body class="font-body" style="background-color: var(--color-background); color: var(--color-text); min-height: 100vh;">
+
+    <div class="p-4 md:p-8">
+        <header class="mb-8">
+            <div class="max-w-7xl mx-auto flex justify-between items-center flex-wrap">
+                <!-- Title Block (centered on small screens) -->
+                <div class="flex-1 text-center md:text-left min-w-[200px] mb-4 md:mb-0">
+                    <h1 
+                        class="text-4xl md:text-5xl font-black mb-2 uppercase font-body h1-lifted" 
+                        style="color: var(--color-text); letter-spacing: 0.05em;"
+                    >
+                        AssetAI Score
+                    </h1>
+                    <p class="text-xl font-medium" style="color: var(--color-secondary);">
+                        Your digital superpower. Stop the guesswork. Own your power.
+                    </p>
+                </div>
+        
+                <!-- Navigation Button to Dashboard (NEW) -->
+                <a href="AssetAI_Dashboard.html" class="flex-shrink-0 w-full md:w-auto">
+                    <button 
+                        class="p-3 px-6 rounded-lg text-white font-semibold text-lg uppercase transition-transform transform hover:scale-[1.05] shadow-lg font-body w-full md:w-auto"
+                        style="background-color: var(--color-secondary);"
+                    >
+                        View My Leverage Log
+                    </button>
+                </a>
+            </div>
+        </header>
+
+        <!-- Input and CTA Section -->
+        <div class="max-w-3xl mx-auto bg-white p-6 md:p-8 rounded-2xl shadow-2xl mb-12">
+            <h2 class="text-2xl font-semibold mb-4 heading-lifted font-body" style="color: var(--color-text);">Domain & Website Flipper Valuation Engine</h2>
+            <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+                <input
+                    type="text"
+                    id="domainInput"
+                    placeholder="Enter Domain Name (e.g., awesomehustle.com)"
+                    class="flex-grow p-4 border-2 rounded-lg text-lg font-medium focus:ring-2 focus:ring-[--color-secondary] focus:ring-opacity-50"
+                    style="border-color: var(--color-secondary); color: var(--color-text);"
+                />
+                <button
+                    id="analyzeButton"
+                    onclick="handleAnalyze()"
+                    class="p-4 rounded-lg text-white font-semibold text-lg uppercase transition-transform transform hover:scale-[1.02] disabled:opacity-50 shadow-lg font-body"
+                    style="background-color: var(--color-primary);"
+                >
+                    Get My AssetAI Score
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="hidden flex flex-col items-center justify-center p-8">
+            <div class="animate-spin rounded-full h-12 w-12 border-4 border-t-4" style="border-color: var(--color-secondary); border-top-color: var(--color-primary);"></div>
+            <p class="mt-4 text-lg font-medium" style="color: var(--color-text);">
+                Analyzing 10,000 data points... This is the future of due diligence.
+            </p>
+        </div>
+
+        <!-- Results Section (Stage 1 Teaser) -->
+        <div id="resultsContainer" class="max-w-6xl mx-auto hidden">
+            <div id="scoreDisplay" class="text-center mb-10 p-6 rounded-xl shadow-2xl" style="background-color: var(--color-card);">
+                <!-- Score and Risk will be injected here -->
+            </div>
+            
+            <!-- Gated Content Wrapper -->
+            <div class="relative">
+                <!-- Lock Overlay (Stage 2 Conversion CTA) -->
+                <div id="lockOverlay" class="absolute inset-0 flex flex-col items-center justify-center p-12 z-10 transition-opacity duration-500">
+                    <button 
+                        onclick="openModal()"
+                        class="cta-pulsate p-6 rounded-xl text-white font-bold text-2xl md:text-3xl uppercase transition-transform transform hover:scale-[1.05] shadow-2xl border-4 border-white font-body"
+                        style="background-color: var(--color-primary);"
+                    >
+                        <span class="cta-text-shadow">UNLOCK MY FULL DUE DILIGENCE REPORT NOW.</span>
+                        <span class="block text-base font-normal mt-1 cta-text-shadow">(It's FREE for New Users!)</span>
+                    </button>
+                </div>
+
+                <!-- Detailed Metrics (Gated Content) -->
+                <div id="detailedMetrics" class="gated-content-blur">
+                    <div id="keyFeaturesGrid" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                        <!-- Key Feature Cards will be injected here -->
+                    </div>
+                    
+                    <div id="secondaryFeaturesGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                         <!-- Secondary Feature Cards will be injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stage 3 Upsell Card (Hidden until Unlocked) -->
+            <div id="upsellCard" class="hidden mt-12 max-w-4xl mx-auto bg-white p-6 md:p-8 rounded-2xl shadow-2xl transition-opacity duration-700" style="border: 4px solid var(--color-primary);">
+                <h3 class="text-3xl font-body font-black mb-3 text-center heading-lifted" style="color: var(--color-accent);">
+                    STOP WINGING IT. TAKE THE LEVERAGE.
+                </h3>
+                <p class="text-xl text-center mb-6 font-medium" style="color: var(--color-text);">
+                    You have the AssetAI Score. Now you need the <strong>5-Step Tactical Playbook</strong> to turn that data into profit.
+                </p>
+                <div class="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-8">
+                    <ul class="text-left space-y-2 text-lg flex-1 list-disc list-inside" style="color: var(--color-text);">
+                        <li>✅  <strong>Identify:</strong> The exact keywords that drive 10x ROI.</li>
+                        <li>✅  <strong>Negotiate:</strong> Script and leverage points to close the deal.</li>
+                        <li>✅  <strong>Monetize:</strong> 3 simple, fast-track strategies for asset flip.</li>
+                    </ul>
+                    <a href="Playbook_Purchase_Gateway.html" class="flex-shrink-0">
+                        <button 
+                            class="p-4 px-8 rounded-full text-white font-bold text-xl md:text-2xl uppercase transition-transform transform hover:scale-105 shadow-xl font-body border-4 border-white mt-4 md:mt-0"
+                            style="background-color: var(--color-primary);"
+                        >
+                            GET THE PLAYBOOK - ONLY $47
+                        </button>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer / Branding -->
+        <footer class="mt-12 text-center text-sm opacity-75">
+            <p>Digitally Defined | AssetAI Score Engine</p>
+        </footer>
+    </div>
+
+    <!-- Conversion Modal (Custom UI, Stage 2) -->
+    <div id="conversionModal" class="hidden fixed inset-0 flex items-center justify-center z-50 modal-backdrop">
+        <div class="bg-white p-8 rounded-2xl shadow-3xl max-w-lg w-11/12 border-t-8" style="border-color: var(--color-primary);">
+            <h3 class="text-3xl font-body font-black mb-3 heading-lifted" style="color: var(--color-text);">
+                Claim Your Full Report & Unlock Your Leverage!
+            </h3>
+            <p class="text-lg mb-6 font-medium" style="color: var(--color-secondary);">
+                We found the score, now get the <strong>actionable data</strong>. Enter your best email for <strong>instant access</strong> to the detailed due diligence report.
+            </p>
+            <form onsubmit="event.preventDefault(); submitModal();">
+                <input
+                    type="email"
+                    id="emailInput"
+                    placeholder="Your Best Email Address"
+                    required
+                    class="w-full p-3 border-2 rounded-lg mb-4 text-lg font-medium focus:ring-2 focus:ring-[--color-secondary]"
+                    style="border-color: var(--color-secondary);"
+                />
+                <button
+                    type="submit"
+                    class="w-full p-3 rounded-lg text-white font-semibold text-xl uppercase transition-transform transform hover:scale-[1.01] font-body"
+                    style="background-color: var(--color-primary);"
+                >
+                    UNLOCK MY DATA NOW
+                </button>
+            </form>
+            <p class="text-xs text-center mt-4 opacity-70">
+                You'll also get our weekly tips on building automated digital assets. No spam, ever.
+            </p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        // NOTE: setLogLevel is imported from firebase-app in this version, not firebase-auth.
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Firebase Globals & Initialization ---
+        let db, auth, userId;
+        let isFirebaseReady = false;
+        
+        // Use the mandatory global variables provided by the Canvas environment
+        const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-dd-app-id';
+
+        async function initializeFirebase() {
+            try {
+                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+                if (Object.keys(firebaseConfig).length === 0) throw new Error("Firebase config not found.");
+
+                // Set log level first (fixed error: setLogLevel is exported from firebase-firestore, not firebase-auth)
+                // Note: The specific module that exports setLogLevel can sometimes vary or be located in a core utility. 
+                // Since it's often associated with database debugging, we'll try setting it before app init if possible,
+                // or after getting the firestore instance. For this version (11.6.1), it is often exported from firestore.
+                // We've moved the import for setLogLevel to firestore above, but for runtime stability, we set it here.
+                setLogLevel('Debug'); 
+
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                // Sign-in logic: Prefer custom token, fall back to anonymous
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                    console.log("Signed in with custom token.");
+                } else {
+                    await signInAnonymously(auth);
+                    console.log("Signed in anonymously.");
+                }
+                
+                userId = auth.currentUser?.uid || crypto.randomUUID();
+                isFirebaseReady = true;
+                console.log(`Firebase initialized. User ID: ${userId}`);
+
+                // If a user analyzed before initialization completed, re-render now
+                if (isUnlocked && analysisResults) {
+                    renderResults(true); 
+                }
+
+            } catch (error) {
+                console.error("Firebase Initialization Error (Persistence Disabled):", error);
+                // Fallback for non-live environment: proceed without persistence
+                isFirebaseReady = false; 
+                userId = crypto.randomUUID(); 
+            }
+        }
+        
+        // Call initialization on load
+        window.onload = initializeFirebase;
+        // --- END Firebase Initialization ---
+
+
+        // State and DOM Elements (Remains in global scope for access by window functions)
+        let analysisResults = null;
+        let isUnlocked = false;
+        
+        const DOMElements = {
+            input: document.getElementById('domainInput'),
+            button: document.getElementById('analyzeButton'),
+            loading: document.getElementById('loading'),
+            resultsContainer: document.getElementById('resultsContainer'),
+            scoreDisplay: document.getElementById('scoreDisplay'),
+            detailedMetrics: document.getElementById('detailedMetrics'),
+            keyFeaturesGrid: document.getElementById('keyFeaturesGrid'),
+            secondaryFeaturesGrid: document.getElementById('secondaryFeaturesGrid'),
+            lockOverlay: document.getElementById('lockOverlay'),
+            modal: document.getElementById('conversionModal'),
+            emailInput: document.getElementById('emailInput'),
+            upsellCard: document.getElementById('upsellCard'), 
+        };
+
+        // Utility to generate the Score Card HTML
+        const createScoreCard = (title, value, unit, description, colorVar = '--color-text', isUrgent = false) => {
+            const colorStyle = isUrgent ? 'var(--color-accent)' : `var(${colorVar})`;
+            const borderColorStyle = isUrgent ? 'var(--color-accent)' : 'var(--color-secondary)';
+            
+            return `
+                <div class="bg-white p-6 rounded-xl shadow-lg flex flex-col justify-between h-full transition-all duration-300 hover:shadow-xl hover:scale-[1.01]" style="border-left: 5px solid ${borderColorStyle};">
+                    <h3 class="text-xl font-bold mb-2 font-body" style="color: var(--color-text);">${title}</h3>
+                    <div class="flex items-baseline mb-2">
+                        <span class="text-5xl font-black font-body" style="color: ${colorStyle};">
+                            ${value}
+                        </span>
+                        ${unit ? `<span class="text-2xl ml-2 font-semibold font-body" style="color: ${colorStyle};">${unit}</span>` : ''}
+                    </div>
+                    <p class="text-sm font-medium font-body" style="color: var(--color-text);">${description}</p>
+                </div>
+            `;
+        };
+
+        // --- Simulated AI Logic ---
+        const simulateAnalysis = (inputDomain) => {
+            const hash = Array.from(inputDomain).reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            
+            const assetScore = 600 + (hash % 350) + (inputDomain.length * 5);
+            const riskLevel = hash % 5;
+            let riskMessage;
+            let riskScore;
+            if (riskLevel === 0) {
+              riskMessage = 'ZERO RISK: Clean history, no trademark conflicts. Go get it.';
+              riskScore = 'A+';
+            } else if (riskLevel <= 2) {
+              riskMessage = 'LOW RISK: Minor past use detected (low-quality blog), no legal flags.';
+              riskScore = 'B';
+            } else {
+              riskMessage = 'HIGH RISK: Potential trademark conflict (Flagged: "Digital" variation), plus archived spam history found. <strong>DUE DILIGENCE REQUIRED.</strong>';
+              riskScore = 'D-';
+            }
+
+            const forecastedPrice = 500 + (hash % 49500);
+            const spamScore = 5 + (hash % 40) + (inputDomain.includes('crypto') ? 50 : 0);
+            const dr = 10 + (hash % 60); 
+            const tf = 5 + (hash % 50); 
+            const organicTraffic = 100 + (hash % 5000);
+
+            return {
+                assetScore: Math.min(999, Math.round(assetScore / 10) * 10),
+                riskScore,
+                riskMessage,
+                forecastedPrice: Math.round(forecastedPrice / 100) * 100,
+                spamScore: Math.min(99, spamScore),
+                dr,
+                tf,
+                organicTraffic,
+                domain: inputDomain,
+            };
+        };
+
+        // --- Core Application Functions (Modified to save data) ---
+
+        const handleAnalyze = async () => {
+            const domain = DOMElements.input.value.trim().toLowerCase();
+            if (!domain) return;
+
+            // 1. Reset and Show Loading
+            DOMElements.button.disabled = true;
+            DOMElements.button.textContent = 'Analyzing...';
+            DOMElements.resultsContainer.classList.add('hidden');
+            DOMElements.loading.classList.remove('hidden');
+            
+            await new Promise(resolve => setTimeout(resolve, 3000)); // Simulate AI delay
+
+            DOMElements.loading.classList.add('hidden');
+            
+            // 2. Run Analysis
+            analysisResults = simulateAnalysis(domain);
+            
+            // 3. Render Stage 1 (Teaser)
+            renderResults(false);
+            
+            DOMElements.button.disabled = false;
+            DOMElements.button.textContent = 'Get My AssetAI Score';
+            DOMElements.resultsContainer.classList.remove('hidden');
+        };
+
+        const renderResults = (unlocked) => {
+            const results = analysisResults;
+            if (!results) return;
+
+            const scoreColor = results.assetScore >= 800 ? 'green' : 
+                             results.assetScore >= 600 ? 'var(--color-secondary)' : 
+                             'var(--color-accent)';
+            
+            const riskColor = results.riskScore === 'A+' ? 'green' : 'var(--color-accent)';
+            const assetMessage = results.assetScore >= 800 ? "This is a POWERHOUSE asset. Invest with confidence." : 
+                                 results.assetScore >= 600 ? "Solid potential. Good due diligence required." : 
+                                 "High risk/low value. Look for better leverage.";
+
+            // --- STAGE 1: CORE SCORE TEASE ---
+            DOMElements.scoreDisplay.innerHTML = `
+                <p class="text-2xl font-semibold mb-3 font-body" style="color: var(--color-text);">
+                    Final AssetAI Score for <span class="font-bold underline" style="color: var(--color-primary);">${results.domain}</span>
+                </p>
+                <span 
+                    class="text-8xl md:text-9xl font-black font-body transition-all duration-500 block p-4 rounded-xl" 
+                    style="color: ${scoreColor}; text-shadow: 4px 4px 0 rgba(0,0,0,0.1);"
+                >
+                    ${results.assetScore}
+                </span>
+                <p class="text-lg mt-2 font-semibold mb-6 font-body" style="color: var(--color-text);">${assetMessage}</p>
+                
+                ${createScoreCard(
+                    "Automated Risk Assessment (Tease)",
+                    results.riskScore,
+                    "Flag",
+                    "Immediate risk assessment for trademark infringement or spam history. <strong>FULL DETAILS LOCKED</strong>.",
+                    riskColor,
+                    results.riskScore !== 'A+'
+                )}
+            `;
+            
+            // Clear existing detailed metrics
+            DOMElements.keyFeaturesGrid.innerHTML = '';
+            DOMElements.secondaryFeaturesGrid.innerHTML = '';
+
+
+            // --- DETAILED METRICS (GATED CONTENT) ---
+
+            const primaryCards = [
+                createScoreCard(
+                    "Predictive Pricing Engine",
+                    results.forecastedPrice.toLocaleString(),
+                    "USD",
+                    "Machine learning forecast of potential resale value based on historical sales and keyword value (NameBio/market trends).",
+                    '--color-secondary',
+                    false
+                ),
+                createScoreCard(
+                    "Backlink Health Score",
+                    results.spamScore,
+                    "%",
+                    `AI-detected spam score. ${results.spamScore}% of links flagged as low quality/negative SEO. Focus on disavowing high-risk links.`,
+                    results.spamScore > 30 ? '--color-accent' : '--color-secondary',
+                    results.spamScore > 30
+                ),
+                 createScoreCard(
+                    "Organic Traffic Potential",
+                    results.organicTraffic.toLocaleString(),
+                    "/mo",
+                    "Estimated organic traffic potential based on target keywords and market difficulty (Simulated Ahrefs/Moz data).",
+                    '--color-primary',
+                    false
+                ),
+            ].join('');
+            
+            const secondaryCards = [
+                createScoreCard("Domain Rating (DR)", results.dr, "/100", "Authority score based on backlink profile strength."),
+                createScoreCard("Trust Flow (TF)", results.tf, "/100", "Quality score based on proximity to trusted seed sites."),
+                createScoreCard(
+                    "Keyword Value Index",
+                    ((results.forecastedPrice / 1000) * (results.dr / 10)).toFixed(2),
+                    "KVX",
+                    "A custom index combining pricing and authority metrics for fast comparison."
+                ),
+            ].join('');
+
+            DOMElements.keyFeaturesGrid.innerHTML = primaryCards;
+            DOMElements.secondaryFeaturesGrid.innerHTML = secondaryCards;
+
+
+            // --- STAGE 2 & 3: LOCK / UNLOCK ---
+            if (unlocked) {
+                DOMElements.lockOverlay.classList.add('hidden');
+                DOMElements.detailedMetrics.classList.remove('gated-content-blur');
+                DOMElements.upsellCard.classList.remove('hidden'); // SHOW UPSELL CARD (STAGE 3)
+            } else {
+                // Initial State: Locked
+                DOMElements.lockOverlay.classList.remove('hidden');
+                DOMElements.detailedMetrics.classList.add('gated-content-blur');
+                DOMElements.upsellCard.classList.add('hidden'); // HIDE UPSELL CARD (STAGE 3)
+            }
+        };
+
+        // --- Modal/Conversion Logic ---
+
+        const openModal = () => {
+            DOMElements.modal.classList.remove('hidden');
+            DOMElements.emailInput.focus();
+        };
+
+        const closeModal = () => {
+            DOMElements.modal.classList.add('hidden');
+        };
+
+        window.submitModal = async () => {
+            const email = DOMElements.emailInput.value;
+            if (!email) return;
+
+            // 1. Save Lead to Firestore (Persistence)
+            if (isFirebaseReady && db && userId) {
+                try {
+                    // Path: /artifacts/{appId}/users/{userId}/aiAssetScore_leads/{documentId}
+                    const leadsCollection = collection(db, 'artifacts', APP_ID, 'users', userId, 'aiAssetScore_leads');
+                    await addDoc(leadsCollection, {
+                        email: email,
+                        timestamp: serverTimestamp(),
+                        domain: analysisResults ? analysisResults.domain : 'unknown',
+                        score: analysisResults ? analysisResults.assetScore : null,
+                        details: analysisResults || null
+                    });
+                    console.log("Lead and Score successfully saved to Firestore.");
+                } catch (error) {
+                    console.error("Error saving lead to Firestore:", error);
+                }
+            } else {
+                console.warn("Firebase not ready or user not authenticated. Lead not saved to persistence.");
+            }
+
+            // 2. Update State and Close Modal
+            isUnlocked = true;
+            closeModal();
+            
+            // 3. RENDER STAGE 2 & 3: Full Reveal and Upsell!
+            renderResults(true); 
+        };
+
+        // Allow closing modal with ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+    </script>
+</body>
+</html>

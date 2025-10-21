@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Money Metrics HQ</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Now including Inter (700 Bold) and DM Sans (Body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Inter:wght@700&display=swap" rel="stylesheet">
+
+    <!-- Chart.js for charts (replaces Recharts) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* Custom styles to match the brand */
+        body {
+            /* DM Sans for body text */
+            font-family: 'DM Sans', sans-serif;
+            background-color: #FFFCF9;
+        }
+        .font-headline { 
+            /* Inter Bold for all headings */
+            font-family: 'Inter', sans-serif; 
+            font-weight: 700; 
+        }
+        .font-body { 
+            font-family: 'DM Sans', sans-serif; 
+        }
+        /* Animation for tabs */
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.5s ease-out forwards;
+        }
+        /* Hide pages by default */
+        .page-content {
+            display: none;
+        }
+        .page-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center p-4 md:p-8">
+
+    <header class="w-full max-w-5xl text-center mb-8">
+        <div class="flex justify-center items-center gap-4">
+            <h1 class="font-headline text-4xl md:text-6xl text-[#2D3748] uppercase tracking-wider">
+                Money Metrics <span class="text-[#F18B25]">HQ</span>
+            </h1>
+            <div id="saving-indicator" class="transition-opacity duration-300 opacity-0">
+                <svg class="animate-spin h-6 w-6 text-[#F18B25]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+        </div>
+        <p class="font-body text-gray-600 mt-2 text-lg">No more excuses. Your numbers, saved in real-time.</p>
+    </header>
+
+    <div class="w-full max-w-5xl bg-white rounded-xl shadow-lg">
+        <nav id="tabs" class="flex justify-center border-b border-gray-200">
+            <button data-tab="kpi" class="tab-button font-bold py-3 px-4 md:px-6 text-sm md:text-base transition-all duration-300 ease-in-out border-b-4">KPI Tracker</button>
+            <button data-tab="forecast" class="tab-button font-bold py-3 px-4 md:px-6 text-sm md:text-base transition-all duration-300 ease-in-out border-b-4">Forecaster</button>
+            <button data-tab="roi" class="tab-button font-bold py-3 px-4 md:px-6 text-sm md:text-base transition-all duration-300 ease-in-out border-b-4">ROI Calculator</button>
+            <button data-tab="goals" class="tab-button font-bold py-3 px-4 md:px-6 text-sm md:text-base transition-all duration-300 ease-in-out border-b-4">Goal Setter</button>
+        </nav>
+        <main class="p-6 md:p-8">
+            <!-- Loading State -->
+            <div id="loading-state" class="flex justify-center items-center h-64">
+                <p class="font-headline text-2xl text-gray-500">Loading Your Metrics...</p>
+            </div>
+
+            <!-- KPI Tracker Page -->
+            <div id="kpi-page" class="page-content">
+                <h2 class="font-headline text-3xl text-[#2D3748] mb-1 text-center">Key Performance Indicators</h2>
+                <p class="font-body text-gray-500 mb-6 text-center">Monitor the vital signs of your business in real-time.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-4 font-body">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Total Revenue</label>
+                            <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">$</span><input type="number" id="kpi-revenue" data-path="kpi.revenue" class="metric-input w-full p-3 rounded-md border border-gray-300 focus:ring-[#F18B25] focus:border-[#F18B25] pl-7"></div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Cost of Goods Sold (COGS)</label>
+                            <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">$</span><input type="number" id="kpi-cogs" data-path="kpi.cogs" class="metric-input w-full p-3 rounded-md border border-gray-300 focus:ring-[#F18B25] focus:border-[#F18B25] pl-7"></div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Total Marketing & Sales Cost</label>
+                            <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">$</span><input type="number" id="kpi-marketingCost" data-path="kpi.marketingCost" class="metric-input w-full p-3 rounded-md border border-gray-300 focus:ring-[#F18B25] focus:border-[#F18B25] pl-7"></div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">New Customers Acquired</label>
+                            <div class="relative"><input type="number" id="kpi-newCustomers" data-path="kpi.newCustomers" class="metric-input w-full p-3 rounded-md border border-gray-300 focus:ring-[#F18B25] focus:border-[#F18B25] pl-3"></div>
+                        </div>
+                    </div>
+                    <div class="space-y-4" id="kpi-results"></div>
+                </div>
+                <div class="mt-12">
+                    <h3 class="font-headline text-2xl text-center text-[#2D3748] mb-4">Financial Snapshot</h3>
+                    <div class="w-full h-80 bg-gray-50 p-4 rounded-lg"><canvas id="kpi-chart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Forecaster Page -->
+            <div id="forecast-page" class="page-content">
+                    <h2 class="font-headline text-3xl text-[#2D3748] mb-1 text-center">Financial Forecaster</h2>
+                <p class="font-body text-gray-500 mb-6 text-center">Project future performance to make smarter strategic decisions.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 font-body">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Current Monthly Revenue</label>
+                        <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">$</span><input type="number" id="forecast-initialMonthlyRevenue" data-path="forecast.initialMonthlyRevenue" class="metric-input w-full p-3 rounded-md border border-gray-300 focus:ring-[#F18B25] focus:border-[#F18B25] pl-7"></div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Monthly Growth Rate (%)</label>
+                        <div class="relative"><input type="number" id="forecast-growthRate" data-path="forecast.growthRate" class="metric-input w-full p-3 rounded-md border border-gray-300 focus:ring-[#F18B25] focus:border-[#F18B25] pl-3"></div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Expenses as % of Revenue</label>
+                        <div class="relative"><input type="number" id="forecast-expensesRate" data-path="forecast.expensesRate" class="metric-input w-full p-3 rounded-md border border-gray-300 focus:ring-[#F18B25] focus:border-[#F18B25] pl-3"></div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Projection Period (Months)</label>
+                        <div class="relative"><input type="number" id="forecast-months" data-path="forecast.months" class="metric-input w-full p-3 rounded-md border border-gray-300 focus:ring-[#F18B25] focus:border-[#F18B25] pl-3"></div>
+                    </div>
+                </div>
+                <div id="forecast-results" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"></div>
+                <div class="overflow-x-auto bg-white rounded-lg shadow">
+                    <table class="w-full text-left font-body">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="p-4 font-bold text-[#2D3748]">Month</th>
+                                <th class="p-4 font-bold text-[#2D3748]">Revenue</th>
+                                <th class="p-4 font-bold text-[#2D3748]">Expenses</th>
+                                <th class="p-4 font-bold text-[#2D3748]">Profit</th>
+                            </tr>
+                        </thead>
+                        <tbody id="forecast-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ROI Page -->
+            <div id="roi-page" class="page-content">
+                <h2 class="font-headline text-3xl text-[#2D3748] mb-1 text-center">Return on Investment (ROI)</h2>
+                <p class="font-body text-gray-500 mb-6 text-center">Analyze the profitability of any campaign or business venture.</p>
+                <div class="max-w-lg mx-auto space-y-6 font-body">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Total Investment</label>
+                        <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">$</span><input type="number" id="roi-investment" data-path="roi.investment" class="metric-input w-full p-3 rounded-md border border-gray-300 focus:ring-[#F18B25] focus:border-[#F18B25] pl-7"></div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Total Return (Revenue)</label>
+                        <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">$</span><input type="number" id="roi-returnValue" data-path="roi.returnValue" class="metric-input w-full p-3 rounded-md border border-gray-300 focus:ring-[#F18B25] focus:border-[#F18B25] pl-7"></div>
+                    </div>
+                    <div id="roi-results" class="text-center pt-4"></div>
+                </div>
+            </div>
+
+            <!-- Goals Page -->
+            <div id="goals-page" class="page-content">
+                <h2 class="font-headline text-3xl text-[#2D3748] mb-1 text-center">Set Your Financial Goals</h2>
+                <p class="font-body text-gray-500 mb-6 text-center">Establish clear, achievable targets. This is where you define your legacy.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-gray-50 p-6 rounded-lg font-body">
+                        <h3 class="font-headline text-2xl text-[#47B7D4] mb-4">Quarterly Revenue Goal</h3>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Current Quarterly Revenue</label>
+                            <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">$</span><input type="number" id="goals-currentRevenue" data-path="goals.currentRevenue" class="metric-input w-full p-3 rounded-md border border-gray-300 focus:ring-[#F18B25] focus:border-[#F18B25] pl-7"></div>
+                        </div>
+                        <div class="mt-4">
+                             <label class="block text-sm font-bold text-gray-700 mb-1">Target Quarterly Revenue</label>
+                            <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">$</span><input type="number" id="goals-targetRevenue" data-path="goals.targetRevenue" class="metric-input w-full p-3 rounded-md border border-gray-300 focus:ring-[#F18B25] focus:border-[#F18B25] pl-7"></div>
+                        </div>
+                        <div id="goals-revenue-progress" class="mt-4"></div>
+                    </div>
+                    <div class="bg-gray-50 p-6 rounded-lg font-body">
+                        <h3 class="font-headline text-2xl text-[#F18B25] mb-4">Quarterly Profit Goal</h3>
+                            <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Current Quarterly Profit</label>
+                            <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">$</span><input type="number" id="goals-currentProfit" data-path="goals.currentProfit" class="metric-input w-full p-3 rounded-md border border-gray-300 focus:ring-[#F18B25] focus:border-[#F18B25] pl-7"></div>
+                        </div>
+                        <div class="mt-4">
+                             <label class="block text-sm font-bold text-gray-700 mb-1">Target Quarterly Profit</label>
+                            <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">$</span><input type="number" id="goals-targetProfit" data-path="goals.targetProfit" class="metric-input w-full p-3 rounded-md border border-gray-300 focus:ring-[#F18B25] focus:border-[#F18B25] pl-7"></div>
+                        </div>
+                        <div id="goals-profit-progress" class="mt-4"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+       <footer class="text-center mt-8 text-gray-500 text-sm font-body">
+        <p>Own your power.</p>
+        <p id="session-id" class="text-xs mt-1"></p>
+    </footer>
+
+    <!-- Firebase and App Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- CONFIGURATION ---
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // --- STATE MANAGEMENT ---
+        let db, auth, userId;
+        let activeTab = 'kpi';
+        let metrics = null;
+        let kpiChart = null;
+        let saveTimeout;
+
+        const defaultMetrics = {
+            kpi: { revenue: 10000, cogs: 4000, marketingCost: 1500, newCustomers: 50 },
+            forecast: { initialMonthlyRevenue: 5000, growthRate: 10, expensesRate: 40, months: 12 },
+            roi: { investment: 500, returnValue: 2000 },
+            goals: { currentRevenue: 50000, targetRevenue: 75000, currentProfit: 15000, targetProfit: 25000 },
+        };
+
+        // --- HELPER FUNCTIONS ---
+        const formatCurrency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value || 0);
+        
+        const createMetricCard = (label, value, color) => `
+            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-[#F18B25]">
+                <p class="text-sm text-gray-600 font-body">${label}</p>
+                <p class="text-3xl font-bold font-headline ${color}">${value}</p>
+            </div>`;
+
+        const createProgressBar = (percentage, color) => {
+            const safePercentage = Math.min(100, Math.max(0, percentage));
+            return `
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-sm font-bold text-gray-700">Progress to Target</span>
+                    <span class="text-sm font-bold text-[#2D3748]">${safePercentage.toFixed(0)}%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-4">
+                    <div class="${color} h-4 rounded-full transition-all duration-500 ease-out" style="width: ${safePercentage}%"></div>
+                </div>`;
+        };
+
+        // --- RENDER FUNCTION (The heart of the UI logic) ---
+        function render() {
+            if (!metrics) return; // Don't render if no data
+
+            // Hide loading state, show content
+            document.getElementById('loading-state').style.display = 'none';
+            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active', 'animate-fade-in'));
+            
+            // Show the active tab's content
+            const activePage = document.getElementById(`${activeTab}-page`);
+            if (activePage) {
+                activePage.classList.add('active', 'animate-fade-in');
+            }
+
+            // Update tab button styles
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                if (btn.dataset.tab === activeTab) {
+                    btn.classList.add('border-[#F18B25]', 'text-[#2D3748]');
+                    btn.classList.remove('border-transparent', 'text-gray-500');
+                } else {
+                    btn.classList.remove('border-[#F18B25]', 'text-[#2D3748]');
+                    btn.classList.add('border-transparent', 'text-gray-500');
+                }
+            });
+
+            // Populate all input fields with current metric values
+            document.querySelectorAll('.metric-input').forEach(input => {
+                const path = input.dataset.path.split('.');
+                input.value = metrics[path[0]][path[1]];
+            });
+
+            // --- Render KPI Tab ---
+            const kpi = metrics.kpi;
+            const grossProfit = kpi.revenue - kpi.cogs;
+            const grossMargin = kpi.revenue > 0 ? (grossProfit / kpi.revenue) * 100 : 0;
+            const netProfit = grossProfit - kpi.marketingCost;
+            const netMargin = kpi.revenue > 0 ? (netProfit / kpi.revenue) * 100 : 0;
+            const cac = kpi.newCustomers > 0 ? kpi.marketingCost / kpi.newCustomers : 0;
+            
+            document.getElementById('kpi-results').innerHTML = `
+                ${createMetricCard('Gross Profit', formatCurrency(grossProfit), 'text-[#47B7D4]')}
+                ${createMetricCard('Gross Margin', `${grossMargin.toFixed(2)}%`, 'text-[#47B7D4]')}
+                ${createMetricCard('Simplified Net Profit', formatCurrency(netProfit), 'text-[#8884d8]')}
+                ${createMetricCard('Net Profit Margin', `${netMargin.toFixed(2)}%`, 'text-[#8884d8]')}
+                ${createMetricCard('Customer Acquisition Cost (CAC)', formatCurrency(cac), 'text-[#C20F0A]')}
+            `;
+            
+            // Render KPI Chart
+            const chartCtx = document.getElementById('kpi-chart').getContext('2d');
+            const chartData = {
+                labels: ['Revenue', 'Gross Profit', 'Net Profit'],
+                datasets: [{
+                    label: 'Amount',
+                    data: [kpi.revenue, grossProfit, netProfit],
+                    backgroundColor: ['#47B7D4', '#82ca9d', '#8884d8'],
+                    borderRadius: 8,
+                }]
+            };
+            if (kpiChart) kpiChart.destroy(); // Destroy old chart before creating new one
+            kpiChart = new Chart(chartCtx, {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { ticks: { callback: value => formatCurrency(value) } } }
+                }
+            });
+
+            // --- Render Forecast Tab ---
+            const f = metrics.forecast;
+            let forecastHTML = '';
+            let totalRevenue = 0, totalProfit = 0;
+            for (let i = 0; i < f.months; i++) {
+                const revenue = f.initialMonthlyRevenue * Math.pow(1 + f.growthRate / 100, i);
+                const expenses = revenue * (f.expensesRate / 100);
+                const profit = revenue - expenses;
+                totalRevenue += revenue;
+                totalProfit += profit;
+                forecastHTML += `
+                    <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                        <td class="p-4">${i + 1}</td>
+                        <td class="p-4 text-green-600">${formatCurrency(revenue)}</td>
+                        <td class="p-4 text-red-600">${formatCurrency(expenses)}</td>
+                        <td class="p-4 text-blue-600 font-semibold">${formatCurrency(profit)}</td>
+                    </tr>`;
+            }
+            document.getElementById('forecast-table-body').innerHTML = forecastHTML;
+            document.getElementById('forecast-results').innerHTML = `
+                ${createMetricCard(`Projected ${f.months}-Month Revenue`, formatCurrency(totalRevenue), 'text-[#47B7D4]')}
+                ${createMetricCard(`Projected ${f.months}-Month Profit`, formatCurrency(totalProfit), 'text-[#82ca9d]')}
+            `;
+
+            // --- Render ROI Tab ---
+            const r = metrics.roi;
+            const roiNetProfit = r.returnValue - r.investment;
+            const roi = r.investment > 0 ? (roiNetProfit / r.investment) * 100 : 0;
+            let roiColor = roi > 0 ? 'text-green-600' : (roi < 0 ? 'text-red-600' : 'text-gray-800');
+            document.getElementById('roi-results').innerHTML = `
+                <p class="font-body text-lg text-gray-600">Net Profit</p>
+                <p class="font-headline text-4xl mb-4 ${roiNetProfit > 0 ? 'text-green-600' : 'text-red-600'}">${formatCurrency(roiNetProfit)}</p>
+                <p class="font-body text-lg text-gray-600">Your ROI is</p>
+                <p class="font-headline text-7xl ${roiColor}">${roi.toFixed(1)}%</p>
+            `;
+
+            // --- Render Goals Tab ---
+            const g = metrics.goals;
+            const revenueProgress = g.targetRevenue > 0 ? (g.currentRevenue / g.targetRevenue) * 100 : 0;
+            const profitProgress = g.targetProfit > 0 ? (g.currentProfit / g.targetProfit) * 100 : 0;
+            document.getElementById('goals-revenue-progress').innerHTML = createProgressBar(revenueProgress, 'bg-[#47B7D4]');
+            document.getElementById('goals-profit-progress').innerHTML = createProgressBar(profitProgress, 'bg-[#F18B25]');
+        }
+
+        // --- DATA & EVENT HANDLING ---
+        async function updateMetric(path, value) {
+            if (!userId || !db) return;
+            
+            // Update local state object
+            const keys = path.split('.');
+            metrics[keys[0]][keys[1]] = value;
+
+            // Show saving indicator and debounce save to Firestore
+            document.getElementById('saving-indicator').classList.remove('opacity-0');
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(async () => {
+                const docRef = doc(db, `artifacts/${appId}/users/${userId}/metrics`, 'data');
+                try {
+                    await setDoc(docRef, metrics, { merge: true });
+                } catch (error) {
+                    console.error("Error saving data:", error);
+                } finally {
+                    document.getElementById('saving-indicator').classList.add('opacity-0');
+                }
+            }, 500);
+            
+            render(); // Re-render the UI immediately on input
+        }
+
+        function setupEventListeners() {
+            // Tab switching
+            document.getElementById('tabs').addEventListener('click', (e) => {
+                if (e.target.matches('.tab-button')) {
+                    activeTab = e.target.dataset.tab;
+                    render();
+                }
+            });
+
+            // Input changes
+            document.querySelector('.w-full.max-w-5xl').addEventListener('input', (e) => {
+                if (e.target.matches('.metric-input')) {
+                    const path = e.target.dataset.path;
+                    const value = parseFloat(e.target.value) || 0;
+                    updateMetric(path, value);
+                }
+            });
+        }
+
+        // --- INITIALIZATION ---
+        async function init() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        document.getElementById('session-id').textContent = `Session ID: ${userId}`;
+                        
+                        // User is signed in, now listen for data
+                        const docRef = doc(db, `artifacts/${appId}/users/${userId}/metrics`, 'data');
+                        onSnapshot(docRef, (docSnap) => {
+                            if (docSnap.exists()) {
+                                metrics = docSnap.data();
+                            } else {
+                                // First time user, set default data in Firestore
+                                metrics = defaultMetrics;
+                                setDoc(docRef, metrics);
+                            }
+                            render(); // Render UI with fetched/new data
+                        });
+
+                    } else if (initialAuthToken) {
+                        signInWithCustomToken(auth, initialAuthToken).catch(err => signInAnonymously(auth));
+                    } else {
+                        signInAnonymously(auth);
+                    }
+                });
+            } catch (error) {
+                console.error("Initialization failed:", error);
+                // Fallback to offline mode if Firebase fails
+                metrics = defaultMetrics;
+                document.getElementById('loading-state').innerHTML = '<p class="font-headline text-xl text-red-600">Could not connect to database. Running in offline mode.</p>';
+                render();
+            }
+            setupEventListeners();
+        }
+
+        // Start the application
+        init();
+
+    </script>
+</body>
+</html>

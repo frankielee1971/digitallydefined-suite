@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competitor Analysis Tool | Digitally Defined</title>
+
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons for vector icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Oswald:wght@700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Custom Font Classes & Animations */
+        body {
+            background-color: #FFFCF9;
+            font-family: 'DM Sans', sans-serif;
+            color: #2D3748;
+        }
+
+        .font-norwester { font-family: 'Oswald', sans-serif; }
+        .font-dm-sans { font-family: 'DM Sans', sans-serif; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out forwards;
+        }
+
+        /* Custom Tailwind Config to match your branding */
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'dd-orange': '#F18B25',
+                        'dd-blue': '#47B7D4',
+                        'dd-red': '#C20F0A',
+                        'dd-background': '#FFFCF9',
+                        'dd-card': '#FFFFFF',
+                        'dd-text': '#2D3748'
+                    }
+                }
+            }
+        }
+    </style>
+</head>
+<body class="bg-dd-background">
+
+    <header class="bg-dd-card shadow-md p-6">
+        <h1 class="font-norwester text-4xl text-center text-dd-text uppercase tracking-wider">Competitor Analysis Tool</h1>
+        <p class="text-center font-dm-sans text-lg text-gray-600 mt-2">
+            Let's see what they're <strong style="color: #C20F0A;">really</strong> up to. No more excuses.
+        </p>
+    </header>
+
+    <main class="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto">
+        <div class="bg-dd-card rounded-xl shadow-lg">
+            <div class="flex border-b border-gray-200">
+                <button id="tab-traffic" class="tab-button flex-1 py-3 px-4 text-center font-dm-sans font-bold text-sm sm:text-base transition-all duration-300 ease-in-out flex items-center justify-center gap-2">
+                    <i data-lucide="search" class="w-4 h-4"></i> Traffic Analysis
+                </button>
+                <button id="tab-keywords" class="tab-button flex-1 py-3 px-4 text-center font-dm-sans font-bold text-sm sm:text-base transition-all duration-300 ease-in-out flex items-center justify-center gap-2">
+                    <i data-lucide="target" class="w-4 h-4"></i> Keyword Comparison
+                </button>
+                <button id="tab-social" class="tab-button flex-1 py-3 px-4 text-center font-dm-sans font-bold text-sm sm:text-base transition-all duration-300 ease-in-out flex items-center justify-center gap-2">
+                     <i data-lucide="share-2" class="w-4 h-4"></i> Social Media Scan
+                </button>
+            </div>
+            <div id="content-container" class="p-4 sm:p-8">
+                <!-- Dynamic content will be injected here -->
+            </div>
+        </div>
+        <footer class="text-center mt-8 text-gray-500 font-dm-sans text-sm">
+            <p>Powered by Digitally Defined & Gemini. Use these insights to build, not to burn out.</p>
+        </footer>
+    </main>
+
+    <script>
+        // --- CONFIGURATION ---
+        // !!! IMPORTANT: This is for demonstration only. Do NOT expose your API key in client-side code in a real application.
+        const GEMINI_API_KEY = ""; // PASTE YOUR GEMINI API KEY HERE
+        
+        // --- GLOBAL STATE ---
+        let activeTab = 'traffic';
+        let trafficChart = null; // To hold the chart instance
+
+        // --- API CALL LOGIC ---
+        const callGeminiAPI = async (prompt) => {
+            if (!GEMINI_API_KEY) {
+                const msg = "Hold up! You need to add your Gemini API Key to the script tag at the top of this file.";
+                alert(msg); // Using alert here as a critical configuration stop-gap
+                throw new Error(msg);
+            }
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig: { responseMimeType: "application/json" }
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    console.error("API Error Response:", errorBody);
+                    throw new Error(`API request failed with status ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts[0]) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    // The API can sometimes wrap the JSON in markdown backticks, so we clean it.
+                    const cleanedText = text.replace(/^```json\s*|```$/g, '').trim();
+                    return JSON.parse(cleanedText);
+                } else {
+                    console.error("Unexpected API response structure:", result);
+                    throw new Error("Invalid response structure from API.");
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                throw error;
+            }
+        };
+
+        // --- HELPER FUNCTIONS ---
+        const formatNumber = (num) => {
+            if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+            if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+            return num;
+        };
+
+        // --- RENDER FUNCTIONS (Templates for each view) ---
+        const getTrafficHTML = () => `
+            <div>
+                <h2 class="font-norwester text-2xl text-dd-blue mb-1">Analyze Competitor Traffic</h2>
+                <p class="font-dm-sans text-gray-600 mb-4">Find out where their visitors are coming from. Knowledge is power.</p>
+                <div class="flex flex-col sm:flex-row gap-2 mb-4">
+                    <input id="traffic-url-input" type="text" placeholder="Drop their URL here. No mercy." class="flex-grow p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-dd-orange focus:border-dd-orange transition-all font-dm-sans" />
+                    <button id="analyze-traffic-btn" class="bg-dd-orange text-white font-bold py-3 px-6 rounded-lg hover:bg-opacity-90 transition-all flex items-center justify-center gap-2 disabled:bg-gray-400">
+                        Get The Intel
+                    </button>
+                </div>
+                <div id="traffic-results"></div>
+            </div>
+        `;
+
+        const getKeywordsHTML = () => `
+            <div>
+                <h2 class="font-norwester text-2xl text-dd-blue mb-1">Keyword Battleground</h2>
+                <p class="font-dm-sans text-gray-600 mb-4">See how your keyword strategy stacks up against theirs. Find the gaps.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <input id="keyword-url-input" type="text" placeholder="Competitor's URL" class="p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-dd-orange focus:border-dd-orange transition-all font-dm-sans" />
+                    <textarea id="my-keywords-input" placeholder="Your keywords, comma separated..." rows="3" class="p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-dd-orange focus:border-dd-orange transition-all font-dm-sans"></textarea>
+                </div>
+                <button id="compare-keywords-btn" class="w-full bg-dd-orange text-white font-bold py-3 px-6 rounded-lg hover:bg-opacity-90 transition-all flex items-center justify-center gap-2 disabled:bg-gray-400">
+                    Reveal Overlap
+                </button>
+                <div id="keyword-results"></div>
+            </div>
+        `;
+        
+        const getSocialHTML = () => `
+            <div>
+                <h2 class="font-norwester text-2xl text-dd-blue mb-1">Social Media Scan</h2>
+                <p class="font-dm-sans text-gray-600 mb-4">How are they showing up online? Let's take a look at their social vibe.</p>
+                <div class="flex flex-col sm:flex-row gap-2 mb-4">
+                    <input id="social-url-input" type="text" placeholder="Their website URL goes here." class="flex-grow p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-dd-orange focus:border-dd-orange transition-all font-dm-sans"/>
+                    <button id="analyze-social-btn" class="bg-dd-orange text-white font-bold py-3 px-6 rounded-lg hover:bg-opacity-90 transition-all flex items-center justify-center gap-2 disabled:bg-gray-400">
+                        Scan Socials
+                    </button>
+                </div>
+                <div id="social-results"></div>
+            </div>
+        `;
+        
+        // --- EVENT HANDLERS ---
+        function handleTrafficAnalysis() {
+            const urlInput = document.getElementById('traffic-url-input');
+            const resultsContainer = document.getElementById('traffic-results');
+            const analyzeBtn = document.getElementById('analyze-traffic-btn');
+            
+            analyzeBtn.addEventListener('click', async () => {
+                if (!urlInput.value) {
+                    resultsContainer.innerHTML = `<div class="bg-red-100 border-l-4 border-dd-red text-red-700 p-4 rounded-lg my-4 flex items-center gap-3"><i data-lucide="alert-triangle" class="w-5 h-5"></i> <span class="font-bold">Come on, bestie. You gotta give me a URL to work with.</span></div>`;
+                    lucide.createIcons();
+                    return;
+                }
+                
+                analyzeBtn.disabled = true;
+                analyzeBtn.innerHTML = `<i data-lucide="loader" class="animate-spin w-5 h-5"></i> Analyzing...`;
+                resultsContainer.innerHTML = `<div class="text-center p-8"><i data-lucide="loader" class="animate-spin inline-block text-dd-orange w-12 h-12"></i></div>`;
+                lucide.createIcons();
+
+                const prompt = `
+                    As a world-class digital marketing analyst, provide a competitor analysis for the website ${urlInput.value}. Your response MUST be a valid JSON object. Do not include any text, backticks, or markdown before or after the JSON object. The JSON object must have this exact structure:
+                    { "estimatedMonthlyVisits": 123456, "trafficSources": [{"source": "Organic Search", "percentage": 45}, {"source": "Direct", "percentage": 25}, {"source": "Social", "percentage": 15}, {"source": "Referral", "percentage": 10}, {"source": "Paid Search", "percentage": 5}], "topOrganicKeywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"], "analysisSummary": "A brief, 2-3 sentence summary of their likely traffic strategy, written in a direct, no-BS tone for an entrepreneur." }
+                    Ensure the percentages in trafficSources add up to 100. Generate realistic but illustrative data.
+                `;
+                
+                try {
+                    const data = await callGeminiAPI(prompt);
+                    resultsContainer.innerHTML = `
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 animate-fade-in">
+                            <div class="bg-dd-background p-6 rounded-lg border">
+                                <h3 class="font-norwester text-xl text-dd-text mb-4">Traffic Overview</h3>
+                                <p class="text-5xl font-bold font-dm-sans text-dd-blue">${formatNumber(data.estimatedMonthlyVisits)}</p>
+                                <p class="font-dm-sans text-gray-500">Estimated Monthly Visits</p>
+                                <p class="mt-4 font-dm-sans text-base leading-relaxed"><strong>The Gist:</strong> ${data.analysisSummary}</p>
+                            </div>
+                            <div class="bg-dd-background p-6 rounded-lg border">
+                                <h3 class="font-norwester text-xl text-dd-text mb-4">Top Organic Keywords</h3>
+                                <ul class="space-y-2">
+                                    ${data.topOrganicKeywords.map(kw => `<li class="flex items-center gap-2 font-dm-sans text-gray-700 bg-white p-2 rounded"><i data-lucide="target" class="w-4 h-4 text-dd-orange"></i> ${kw}</li>`).join('')}
+                                </ul>
+                            </div>
+                            <div class="lg:col-span-2 bg-dd-background p-6 rounded-lg border">
+                                <h3 class="font-norwester text-xl text-dd-text mb-4">Traffic Sources Breakdown</h3>
+                                <div style="width: 100%; height: 300px;"><canvas id="trafficChart"></canvas></div>
+                            </div>
+                        </div>
+                    `;
+                    // Create the chart
+                    if (trafficChart) trafficChart.destroy(); // Destroy old chart instance
+                    const ctx = document.getElementById('trafficChart').getContext('2d');
+                    trafficChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.trafficSources.map(d => d.source),
+                            datasets: [{
+                                label: 'Traffic %',
+                                data: data.trafficSources.map(d => d.percentage),
+                                backgroundColor: '#47B7D4',
+                                borderColor: '#47B7D4',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: { y: { beginAtZero: true, ticks: { callback: value => `${value}%` } } }
+                        }
+                    });
+                } catch (e) {
+                    resultsContainer.innerHTML = `<div class="bg-red-100 border-l-4 border-dd-red text-red-700 p-4 rounded-lg my-4 flex items-center gap-3"><i data-lucide="alert-triangle" class="w-5 h-5"></i><span class="font-bold">Ugh, the API is being a diva. Check the URL or try again in a sec.</span></div>`;
+                } finally {
+                    analyzeBtn.disabled = false;
+                    analyzeBtn.innerHTML = `Get The Intel`;
+                    lucide.createIcons();
+                }
+            });
+        }
+        
+        function handleKeywordComparison() {
+            const urlInput = document.getElementById('keyword-url-input');
+            const keywordsInput = document.getElementById('my-keywords-input');
+            const resultsContainer = document.getElementById('keyword-results');
+            const compareBtn = document.getElementById('compare-keywords-btn');
+
+            compareBtn.addEventListener('click', async () => {
+                if (!urlInput.value || !keywordsInput.value) {
+                    resultsContainer.innerHTML = `<div class="bg-red-100 border-l-4 border-dd-red text-red-700 p-4 rounded-lg my-4 flex items-center gap-3"><i data-lucide="alert-triangle" class="w-5 h-5"></i><span class="font-bold">Spill it. I need the competitor's URL and at least one of your keywords.</span></div>`;
+                    lucide.createIcons();
+                    return;
+                }
+
+                compareBtn.disabled = true;
+                compareBtn.innerHTML = `<i data-lucide="loader" class="animate-spin w-5 h-5"></i> Comparing...`;
+                resultsContainer.innerHTML = `<div class="text-center p-8"><i data-lucide="loader" class="animate-spin inline-block text-dd-orange w-12 h-12"></i></div>`;
+                lucide.createIcons();
+                
+                const prompt = `As a world-class SEO expert, analyze the website ${urlInput.value} and identify its top 15 most likely organic search keywords. Your response MUST be a valid JSON object with a single key "keywords" containing an array of 15 keyword strings. Do not include any text, backticks, or markdown before or after the JSON object. Example: {"keywords": ["keyword1", "keyword2", ...]}`;
+
+                try {
+                    const result = await callGeminiAPI(prompt);
+                    const userKeywords = keywordsInput.value.split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
+                    const competitorKeywords = result.keywords.map(k => k.toLowerCase());
+                    const overlap = userKeywords.filter(k => competitorKeywords.includes(k));
+                    
+                    const createList = (title, keywords, icon, color) => `
+                        <div class="bg-dd-background p-4 rounded-lg border">
+                            <div class="flex items-center justify-between p-3 rounded-t-lg text-white ${color}">
+                                <h3 class="font-norwester text-lg">${title}</h3>
+                                <i data-lucide="${icon}" class="w-5 h-5"></i>
+                            </div>
+                            <ul class="mt-2 space-y-2 h-64 overflow-y-auto p-1">
+                                ${keywords.length > 0 ? keywords.map(kw => `<li class="font-dm-sans text-gray-800 bg-white p-2 rounded shadow-sm text-sm">${kw}</li>`).join('') : `<li class="font-dm-sans text-gray-500 text-center p-4">Nothing to show here.</li>`}
+                            </ul>
+                        </div>`;
+
+                    resultsContainer.innerHTML = `
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 animate-fade-in">
+                            ${createList('Your Keywords', userKeywords, 'users', 'bg-dd-blue')}
+                            ${createList('Their Keywords', competitorKeywords, 'target', 'bg-dd-text')}
+                            ${createList('The Overlap', overlap, 'check-circle', 'bg-dd-orange')}
+                        </div>`;
+                } catch (e) {
+                     resultsContainer.innerHTML = `<div class="bg-red-100 border-l-4 border-dd-red text-red-700 p-4 rounded-lg my-4 flex items-center gap-3"><i data-lucide="alert-triangle" class="w-5 h-5"></i><span class="font-bold">Something went sideways with the API. Maybe check that URL and try again.</span></div>`;
+                } finally {
+                    compareBtn.disabled = false;
+                    compareBtn.innerHTML = `Reveal Overlap`;
+                    lucide.createIcons();
+                }
+            });
+        }
+        
+        function handleSocialAnalysis() {
+            const urlInput = document.getElementById('social-url-input');
+            const resultsContainer = document.getElementById('social-results');
+            const analyzeBtn = document.getElementById('analyze-social-btn');
+
+            analyzeBtn.addEventListener('click', async () => {
+                if (!urlInput.value) {
+                    resultsContainer.innerHTML = `<div class="bg-red-100 border-l-4 border-dd-red text-red-700 p-4 rounded-lg my-4 flex items-center gap-3"><i data-lucide="alert-triangle" class="w-5 h-5"></i><span class="font-bold">Can't analyze thin air. Give me their URL.</span></div>`;
+                    lucide.createIcons();
+                    return;
+                }
+
+                analyzeBtn.disabled = true;
+                analyzeBtn.innerHTML = `<i data-lucide="loader" class="animate-spin w-5 h-5"></i> Scanning...`;
+                resultsContainer.innerHTML = `<div class="text-center p-8"><i data-lucide="loader" class="animate-spin inline-block text-dd-orange w-12 h-12"></i></div>`;
+                lucide.createIcons();
+
+                const prompt = `
+                    As a savvy social media strategist, analyze the website ${urlInput.value} and provide a summary of its likely social media strategy. Your response MUST be a valid JSON object. Do not include any text, backticks, or markdown before or after the JSON object. The JSON object must have this exact structure:
+                    { "mainPlatforms": [ {"platform": "Instagram", "strategy": "Focuses on high-quality visuals..."}, {"platform": "Facebook", "strategy": "Used for community building..."}, {"platform": "LinkedIn", "strategy": "B2B networking..."} ], "overallStrategy": "A 2-3 sentence summary..." }
+                    Generate realistic but illustrative data.
+                `;
+
+                try {
+                    const data = await callGeminiAPI(prompt);
+                    resultsContainer.innerHTML = `
+                        <div class="animate-fade-in mt-6 bg-dd-background p-6 rounded-lg border">
+                            <h3 class="font-norwester text-xl text-dd-text mb-4">Overall Social Strategy</h3>
+                            <p class="font-dm-sans text-base leading-relaxed mb-6">${data.overallStrategy}</p>
+                            <h3 class="font-norwester text-xl text-dd-text mb-4">Platform Breakdown</h3>
+                            <div class="space-y-4">
+                                ${data.mainPlatforms.map(p => `
+                                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                                        <h4 class="font-norwester text-lg text-dd-blue">${p.platform}</h4>
+                                        <p class="font-dm-sans text-gray-700">${p.strategy}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>`;
+                } catch (e) {
+                    resultsContainer.innerHTML = `<div class="bg-red-100 border-l-4 border-dd-red text-red-700 p-4 rounded-lg my-4 flex items-center gap-3"><i data-lucide="alert-triangle" class="w-5 h-5"></i><span class="font-bold">The API is on a coffee break. Check the URL or try again in a moment.</span></div>`;
+                } finally {
+                    analyzeBtn.disabled = false;
+                    analyzeBtn.innerHTML = `Scan Socials`;
+                    lucide.createIcons();
+                }
+            });
+        }
+        
+        // --- MAIN RENDER AND EVENT BINDING LOGIC ---
+        function renderContent() {
+            const contentContainer = document.getElementById('content-container');
+            
+            // Update Tab Styles
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                const tabId = btn.id.replace('tab-', '');
+                if (tabId === activeTab) {
+                    btn.classList.add('border-dd-orange', 'text-dd-text');
+                    btn.classList.remove('border-transparent', 'text-gray-500', 'hover:bg-gray-100', 'hover:border-gray-300');
+                } else {
+                    btn.classList.remove('border-dd-orange', 'text-dd-text');
+                    btn.classList.add('border-transparent', 'text-gray-500', 'hover:bg-gray-100', 'hover:border-gray-300');
+                }
+            });
+
+            // Inject content and bind events
+            switch (activeTab) {
+                case 'traffic':
+                    contentContainer.innerHTML = getTrafficHTML();
+                    handleTrafficAnalysis();
+                    break;
+                case 'keywords':
+                    contentContainer.innerHTML = getKeywordsHTML();
+                    handleKeywordComparison();
+                    break;
+                case 'social':
+                    contentContainer.innerHTML = getSocialHTML();
+                    handleSocialAnalysis();
+                    break;
+            }
+            // Make sure all new icons are rendered
+            lucide.createIcons();
+        }
+        
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    activeTab = e.currentTarget.id.replace('tab-', '');
+                    renderContent();
+                });
+            });
+
+            // Initial render
+            renderContent();
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Digitally Defined System | Your Second Act</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Fonts: DM Sans for body text (400/700) and Inter (900) for headlines -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,700&family=Inter:wght@900&display=swap" rel="stylesheet">
+    
+    <!-- FIREBASE IMPORTS -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        if (Object.keys(firebaseConfig).length > 0) {
+            setLogLevel('Debug');
+            const app = initializeApp(firebaseConfig);
+            window.db = getFirestore(app);
+            window.auth = getAuth(app);
+            
+            // Sign in the user
+            (async () => {
+                try {
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(window.auth, initialAuthToken);
+                        console.log("Firebase: Signed in with custom token.");
+                    } else {
+                        await signInAnonymously(window.auth);
+                        console.log("Firebase: Signed in anonymously.");
+                    }
+                    window.appId = appId;
+                    window.isFirebaseReady = true;
+                    // Run any pending initialization functions
+                    if (window.onFirebaseReady) window.onFirebaseReady();
+                } catch (error) {
+                    console.error("Firebase Auth Error:", error);
+                }
+            })();
+        } else {
+            console.error("Firebase configuration is missing.");
+        }
+    </script>
+    
+    <style>
+        body {
+            /* Set body text to DM Sans */
+            font-family: 'DM Sans', sans-serif;
+            background-color: #FDFBF8;
+            color: #2D3748; /* Text color matching DD's sophisticated dark text */
+        }
+        /* Custom class for extra bold headlines (Inter Black 900) */
+        .font-headline {
+            font-family: 'Inter', sans-serif;
+            font-weight: 900;
+            letter-spacing: -0.01em;
+        }
+        .dd-orange { color: #F18B25; }
+        .dd-blue { color: #47B7D4; }
+        .dd-red { color: #C20F0A; }
+        .bg-dd-orange { background-color: #F18B25; }
+        
+        /* Interactive element styling */
+        .framework-card.active .framework-details {
+            max-height: 500px;
+            opacity: 1;
+            padding-top: 1.5rem;
+            padding-bottom: 1.5rem;
+        }
+        .framework-card .framework-details {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.7s ease-out, opacity 0.5s ease-in-out, padding 0.7s ease-out;
+        }
+        
+        /* --- FAQ Fixes --- */
+        .faq-item .faq-answer {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            /* Remove default padding so content is completely hidden when max-height is 0 */
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out, padding 0.5s ease-in-out;
+        }
+        .faq-item.active .faq-answer {
+            max-height: 300px; /* Sufficient height for content */
+            opacity: 1;
+            /* Apply padding only when active */
+            padding-bottom: 1.5rem !important; /* pb-6 */
+        }
+        /* --- End FAQ Fixes --- */
+
+        .faq-item.active .plus-icon {
+            transform: rotate(45deg);
+        }
+        .plus-icon {
+            transition: transform 0.3s ease;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        #audit-form-container {
+            min-height: 350px; /* Ensure space for the form and result */
+        }
+        .step-container {
+            transition: opacity 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header (unchanged) -->
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="font-headline text-2xl text-gray-800">Digitally<span class="dd-orange">Defined</span></h1>
+            <a href="#final-cta" class="bg-dd-orange text-white font-bold py-2 px-5 rounded-lg shadow-md hover:opacity-90 transition-opacity">Claim Your System</a>
+        </div>
+    </header>
+
+    <!-- Hero Section (CTA color changed to DD Orange) -->
+    <section class="py-20 md:py-32 bg-white">
+        <div class="container mx-auto px-6 text-center">
+            <h1 class="font-headline text-4xl md:text-6xl lg:text-7xl text-gray-800 leading-tight">
+                STOP TRADING HOURS FOR DOLLARS
+            </h1>
+            <p class="mt-4 text-lg md:text-xl max-w-3xl mx-auto text-gray-600">
+                The <span class="font-bold">"Digitally Defined" System</span> Shows Gen X Women How to Create Passive Income for Your Sons, or Daughters, Without Burning Out.
+            </p>
+            <div class="mt-10">
+                <a href="#audit-step" class="bg-dd-orange text-white font-headline text-xl py-4 px-10 rounded-lg shadow-lg hover:opacity-90 transition-opacity">
+                    START THE SOUL-TO-SKILL AUDIT
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- The Soul-to-Skill Audit (Step 1) -->
+    <section id="audit-step" class="py-20 bg-gray-50 border-t border-b border-gray-200">
+        <div class="container mx-auto px-6 max-w-3xl">
+            <div class="text-center">
+                <span class="text-xs font-bold uppercase tracking-widest dd-orange">Step 1: The Core Foundation</span>
+                <h2 class="font-headline text-3xl md:text-4xl text-gray-800 mt-2">The Soul-to-Skill Audit</h2>
+                <p class="mt-4 text-base md:text-lg text-gray-600 leading-relaxed">
+                    Let's combine your decades of hard-won <span class="font-bold">expertise</span> with your <span class="font-bold">cosmic energy</span> to identify the single, high-profit niche that only you can own. No more generic advice—this is <span class="font-bold">defined leverage</span>.
+                </p>
+            </div>
+            
+            <div id="audit-form-container" class="mt-10 p-8 bg-white shadow-xl rounded-xl">
+                <!-- Step 1: Expertise -->
+                <div id="step-1" class="step-container">
+                    <h3 class="font-bold text-xl mb-4 dd-blue">1 of 3: Define Your Expertise</h3>
+                    <p class="text-gray-600 mb-6">What is the highest-value professional or life skill you have mastered? Be specific (e.g., "Corporate Restructuring," "Holistic Wellness," "ADHD Parenting").</p>
+                    <input type="text" id="input-expertise" placeholder="My high-value skill is..." required
+                           class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-dd-orange focus:border-dd-orange text-lg">
+                    <button onclick="nextStep(2)" class="mt-6 w-full bg-gray-800 text-white font-bold py-3 rounded-lg shadow-md hover:bg-gray-700 transition-colors disabled:opacity-50">Next: Identify the Pain</button>
+                </div>
+
+                <!-- Step 2: Pain/Target -->
+                <div id="step-2" class="step-container hidden opacity-0">
+                    <h3 class="font-bold text-xl mb-4 dd-blue">2 of 3: Pinpoint the Pain</h3>
+                    <p class="text-gray-600 mb-6">What is the painful problem your target client is desperate to solve using this skill? (e.g., "Stop burnout," "Heal generational trauma," "Get c-suite clients").</p>
+                    <input type="text" id="input-pain" placeholder="The problem I solve is..." required
+                           class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-dd-orange focus:border-dd-orange text-lg">
+                    <button onclick="nextStep(3)" class="mt-6 w-full bg-gray-800 text-white font-bold py-3 rounded-lg shadow-md hover:bg-gray-700 transition-colors disabled:opacity-50">Next: Engage Your Soul</button>
+                </div>
+
+                <!-- Step 3: Soul/Energy -->
+                <div id="step-3" class="step-container hidden opacity-0">
+                    <h3 class="font-bold text-xl mb-4 dd-blue">3 of 3: Engage Your Soul Energy</h3>
+                    <p class="text-gray-600 mb-6">Your unique energy determines *how* you deliver value. Choose the one that resonates most with your approach (e.g., Human Design Profile).</p>
+                    <select id="select-energy" required
+                            class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-dd-orange focus:border-dd-orange text-lg appearance-none bg-white">
+                        <option value="" disabled selected>Select Your Cosmic Tool...</option>
+                        <option value="Manifesting Energy">Manifesting (Getting it Done)</option>
+                        <option value="Projector Insight">Projector (Guiding Others)</option>
+                        <option value="Generator Power">Generator (Building Stamina)</option>
+                        <option value="Reflector Wisdom">Reflector (Observational Wisdom)</option>
+                        <option value="Spiritual Alignment">Spiritual Alignment (Intuition-led)</option>
+                    </select>
+                    <button onclick="generateNiche()" class="mt-6 w-full bg-dd-orange text-white font-headline text-lg py-3 rounded-lg shadow-lg hover:opacity-90 transition-colors">GENERATE NICHE STATEMENT</button>
+                </div>
+
+                <!-- Result -->
+                <div id="audit-result" class="step-container hidden opacity-0 text-center">
+                    <h3 class="font-headline text-2xl dd-red mb-4">YOUR DEFINED NICHE STATEMENT</h3>
+                    <p id="niche-output" class="text-2xl md:text-3xl font-bold text-gray-800 p-6 bg-yellow-50 border-2 border-yellow-300 rounded-lg italic leading-relaxed"></p>
+                    <button onclick="displayEbookBlueprint()" class="mt-6 w-full bg-dd-orange text-white font-headline text-lg py-3 rounded-lg shadow-lg hover:opacity-90 transition-colors">PROCEED TO ASSET FORGE (STEP 2) &rarr;</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- The Digital Asset Forge (Step 2 - NEW SECTION) -->
+    <section id="asset-forge" class="py-20 bg-white hidden opacity-0 transition-opacity duration-500">
+        <div class="container mx-auto px-6 max-w-4xl">
+            <div class="text-center">
+                <span class="text-xs font-bold uppercase tracking-widest dd-orange">Step 2: The Digital Asset Forge</span>
+                <h2 class="font-headline text-3xl md:text-4xl text-gray-800 mt-2">The High-Leverage Ebook Blueprint</h2>
+                <p class="mt-4 text-base md:text-lg text-gray-600 leading-relaxed">
+                    Based on your audit, this is the <span class="font-bold">exact, high-converting outline</span> for your digital asset. This structure guarantees transformation and validates the premium price.
+                </p>
+            </div>
+
+            <div class="mt-10 p-8 bg-gray-50 shadow-xl rounded-xl">
+                <h3 id="ebook-title" class="font-headline text-2xl text-center dd-red mb-6"></h3>
+                
+                <ul id="ebook-outline-list" class="space-y-6 text-left">
+                    <!-- Outline will be injected here -->
+                </ul>
+
+                <div class="mt-10 text-center">
+                    <p id="blueprint-message" class="text-sm font-bold text-gray-600 mb-4">
+                        This is the blueprint. <span class="font-bold">NO MORE WRITING FOR MONTHS.</span> Use AI tools (like the ones in Bonus #2) to draft the content for these chapters in a single afternoon.
+                    </p>
+                    <button onclick="saveBlueprint()" id="saveBlueprintButton"
+                        class="w-full md:w-auto bg-dd-blue text-white font-headline text-lg py-3 px-10 rounded-lg shadow-lg hover:bg-blue-600 transition-colors disabled:opacity-50">
+                        SAVE BLUEPRINT TO FIRESTORE
+                    </button>
+                    <p id="saveMessage" class="text-sm mt-3 font-bold"></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    
+    <!-- Framework Section (unchanged) -->
+    <section id="framework" class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="text-center max-w-4xl mx-auto">
+                <h2 class="font-headline text-3xl md:text-4xl text-gray-800">The 4-Step Framework That Converts Knowledge into Wealth</h2>
+                <p class="mt-6 text-base md:text-lg text-gray-600 leading-relaxed">
+                    The premium price reflects that you are buying a <span class="font-bold">shortcut</span>, not just information. This framework bypasses the years of trial-and-error, burnout, and market confusion, giving you the fastest route to passive income. Click each step below to reveal the details.
+                </p>
+            </div>
+
+            <div class="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+                <!-- Card 1 -->
+                <div class="framework-card bg-gray-50 rounded-xl shadow-lg cursor-pointer overflow-hidden border border-gray-200" data-card="1">
+                    <div class="p-6 flex justify-between items-center">
+                        <div>
+                            <span class="text-4xl font-headline dd-orange">01</span>
+                            <h3 class="text-xl font-bold text-gray-800 mt-2">The Soul-to-Skill Audit</h3>
+                        </div>
+                        <div class="text-3xl text-gray-400 transform transition-transform duration-300">&plus;</div>
+                    </div>
+                    <div class="framework-details px-6 bg-white text-gray-600">
+                        We immediately filter out the noise and identify the single, high-value problem you are uniquely qualified to solve. We map your current expertise against your innate "cosmic tools" (Human Design, Numerology) to pinpoint the <span class="font-bold">niche that fuels you</span> and guarantees market demand.
+                    </div>
+                </div>
+                <!-- Card 2 -->
+                <div class="framework-card bg-gray-50 rounded-xl shadow-lg cursor-pointer overflow-hidden border border-gray-200" data-card="2">
+                    <div class="p-6 flex justify-between items-center">
+                        <div>
+                            <span class="text-4xl font-headline dd-orange">02</span>
+                            <h3 class="text-xl font-bold text-gray-800 mt-2">The Digital Asset Forge</h3>
+                        </div>
+                         <div class="text-3xl text-gray-400 transform transition-transform duration-300">&plus;</div>
+                    </div>
+                    <div class="framework-details px-6 bg-white text-gray-600">
+                        This is where we turn your high-value knowledge into a tangible, passive asset (your ebook, course, or digital product) using powerful AI tools for speed and efficiency. <span class="font-bold">No more writing for months.</span> We focus on the transformation, not the word count, ensuring your product is a fast, done-for-you solution.
+                    </div>
+                </div>
+                <!-- Card 3 -->
+                <div class="framework-card bg-gray-50 rounded-xl shadow-lg cursor-pointer overflow-hidden border border-gray-200" data-card="3">
+                    <div class="p-6 flex justify-between items-center">
+                        <div>
+                            <span class="text-4xl font-headline dd-orange">03</span>
+                            <h3 class="text-xl font-bold text-gray-800 mt-2">The Hands-Off Automation Stack</h3>
+                        </div>
+                        <div class="text-3xl text-gray-400 transform transition-transform duration-300">&plus;</div>
+                    </div>
+                    <div class="framework-details px-6 bg-white text-gray-600">
+                        We build the digital ecosystem that ensures your asset sells 24/7. This system includes the payment processor, the email nurture sequence, and the sales page—all running on <span class="font-bold">autopilot</span>. You set it once, and it builds your bank account while you focus on the life you actually want to live.
+                    </div>
+                </div>
+                <!-- Card 4 -->
+                <div class="framework-card bg-gray-50 rounded-xl shadow-lg cursor-pointer overflow-hidden border border-gray-200" data-card="4">
+                    <div class="p-6 flex justify-between items-center">
+                        <div>
+                            <span class="text-4xl font-headline dd-orange">04</span>
+                            <h3 class="text-xl font-bold text-gray-800 mt-2">Legacy & Scale</h3>
+                        </div>
+                         <div class="text-3xl text-gray-400 transform transition-transform duration-300">&plus;</div>
+                    </div>
+                    <div class="framework-details px-6 bg-white text-gray-600">
+                        Once your first asset is generating passive income, we map out the <span class="font-bold">next five years</span> of expansion. We focus on scaling your initial success by repurposing content and identifying adjacent high-value offers, securing a generational income stream.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bonus Stack Section (unchanged) -->
+    <section id="bonuses" class="py-20">
+        <div class="container mx-auto px-6">
+            <div class="text-center max-w-4xl mx-auto">
+                <h2 class="font-headline text-3xl md:text-4xl dd-orange">The Irresistible Bonus Stack</h2>
+                <p class="mt-4 text-2xl font-bold text-gray-800">(Total Value: $1,247)</p>
+                <p class="mt-6 text-base md:text-lg text-gray-600 leading-relaxed">
+                    This premium system is designed for maximum <span class="font-bold">leverage</span>. To guarantee your success and remove all hesitation, you get these three high-value bonuses absolutely free with your enrollment today. This chart visualizes the immense value you receive.
+                </p>
+            </div>
+            <div class="mt-12 chart-container">
+                <canvas id="bonusChart"></canvas>
+            </div>
+            <div class="mt-12 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                <div>
+                    <h3 class="font-bold text-lg text-gray-800">Bonus #1: The Mindset Liberation Toolkit</h3>
+                    <p class="text-sm text-gray-600 mt-2">Dismantle the guilt, perfectionism, and self-sabotage that keeps Gen X women playing small. Stop asking "Am I good enough?" and start commanding your worth.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg text-gray-800">Bonus #2: The Hands-Off Automation Vault</h3>
+                    <p class="text-sm text-gray-600 mt-2">Our proprietary cheat sheet showing you the exact 3 tools needed to set up your entire sales funnel on <span class="font-bold">autopilot</span> in a single afternoon.</p>
+                </div>
+                 <div>
+                    <h3 class="font-bold text-lg text-gray-800">Bonus #3: The 10-Year Legacy Roadmap</h3>
+                    <p class="text-sm text-gray-600 mt-2">A comprehensive plan to transfer, diversify, and protect your digital assets to ensure a lasting income source for future generations.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Justification Section (unchanged) -->
+    <section class="py-20 bg-gray-800 text-white">
+        <div class="container mx-auto px-6 text-center max-w-4xl">
+            <h2 class="font-headline text-3xl md:text-4xl">Is This Price Worth It? (A Simple Calculation)</h2>
+            <p class="mt-6 text-lg text-gray-300 leading-relaxed">
+                If you are comparing this investment to a cheap $49 course, you’re looking at the wrong numbers. You are a 50-year-old woman with a lifetime of high-value expertise. What is your time truly worth?
+            </p>
+            <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+                <div class="bg-gray-700 p-6 rounded-lg">
+                    <p class="font-bold">How many hours do you spend earning back the hourly wage you currently despise?</p>
+                </div>
+                <div class="bg-gray-700 p-6 rounded-lg">
+                    <p class="font-bold">What is the <span class="text-yellow-400">financial cost</span> of waiting another six months to build passive income?</p>
+                </div>
+                <div class="bg-gray-700 p-6 rounded-lg">
+                    <p class="font-bold">What is the <span class="text-yellow-400">emotional cost</span> of not securing a financial legacy for your sons?</p>
+                </div>
+            </div>
+            <p class="mt-10 text-lg text-gray-300 italic">
+                This investment is less than a single weekend business coach session, yet it gives you a digital asset that can generate revenue for a decade. <br/><strong class="text-white">This is not an expense; it is the last time-for-money trade you will ever make.</strong>
+            </p>
+        </div>
+    </section>
+
+    <!-- FAQ Section (UPDATED: CSS/HTML for collapsed state) -->
+    <section id="faq" class="py-20 bg-white">
+        <div class="container mx-auto px-6 max-w-4xl">
+            <h2 class="font-headline text-3xl md:text-4xl text-center text-gray-800">Final Questions, Answered (No More Guessing)</h2>
+            <div class="mt-12 space-y-4">
+                <!-- FAQ Item 1 (Removed pb-6 from faq-answer) -->
+                <div class="faq-item border border-gray-200 rounded-lg">
+                    <div class="faq-question p-6 cursor-pointer flex justify-between items-center">
+                        <h3 class="font-bold text-lg text-gray-800">I'm not "techy." How complicated is the setup?</h3>
+                        <div class="plus-icon text-2xl dd-orange font-bold">&plus;</div>
+                    </div>
+                    <div class="faq-answer px-6 text-gray-600">
+                        <p>This is not a complex coding project. The entire Digitally Defined System is built on the philosophy of <span class="font-bold">Low Barrier to Entry with High ROI</span>. We leverage simple, proven, no-code/low-code tools (detailed in <span class="font-bold">Bonus #2: The Hands-Off Automation Vault</span>) designed for speed. Your focus is on packaging your wisdom; the system handles the tech.</p>
+                    </div>
+                </div>
+                <!-- FAQ Item 2 (Removed pb-6 from faq-answer) -->
+                <div class="faq-item border border-gray-200 rounded-lg">
+                    <div class="faq-question p-6 cursor-pointer flex justify-between items-center">
+                        <h3 class="font-bold text-lg text-gray-800">I already have a full schedule. How much time does this really take?</h3>
+                        <div class="plus-icon text-2xl dd-orange font-bold">&plus;</div>
+                    </div>
+                    <div class="faq-answer px-6 text-gray-600">
+                        <p>This system is specifically designed for the <span class="font-bold">overloaded expert</span>. You are not trading hours for dollars. You are making a single, leveraged investment of time up front to set up the passive system. The automation stack does the rest. <span class="dd-red font-bold">This is an exit strategy, not another thing to add to your list.</span></p>
+                    </div>
+                </div>
+                <!-- FAQ Item 3 (Removed pb-6 from faq-answer) -->
+                <div class="faq-item border border-gray-200 rounded-lg">
+                    <div class="faq-question p-6 cursor-pointer flex justify-between items-center">
+                        <h3 class="font-bold text-lg text-gray-800">Is my expertise *really* valuable enough to charge a premium?</h3>
+                        <div class="plus-icon text-2xl dd-orange font-bold">&plus;</div>
+                    </div>
+                    <div class="faq-answer px-6 text-gray-600">
+                        <p>Absolutely. Your <span class="font-bold">accumulated expertise and credibility</span>—decades of experience across careers and life—are scarce and highly sought-after. Buyers want <span class="font-bold">proven, practical guidance</span>. We use the <span class="font-bold">Soul-to-Skill Audit (Step 1)</span> to prove exactly what your most profitable niche is. Stop playing small; your wisdom is your currency.</p>
+                    </div>
+                </div>
+                 <!-- FAQ Item 4 (Removed pb-6 from faq-answer) -->
+                 <div class="faq-item border border-gray-200 rounded-lg">
+                    <div class="faq-question p-6 cursor-pointer flex justify-between items-center">
+                        <h3 class="font-bold text-lg text-gray-800">What is the guarantee? What if this doesn't work for me?</h3>
+                        <div class="plus-icon text-2xl dd-orange font-bold">&plus;</div>
+                    </div>
+                    <div class="faq-answer px-6 text-gray-600">
+                        <p>This system works for any Gen X woman with high-value knowledge and the willingness to follow the 4-step framework. We offer a <span class="font-bold">30-Day Happiness Guarantee</span>. If you execute Steps 1 and 2 (The Audit and The Forge) and genuinely feel the system isn't the fastest path to your digital legacy, we will refund your investment. Our goal is your <span class="font-bold">definitive second act</span>, not just your money.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA & Lead Capture Section (CTA color changed to DD Orange) -->
+    <section id="final-cta" class="py-20 bg-gray-50">
+        <div class="container mx-auto px-6 text-center max-w-3xl">
+            <h2 class="font-headline text-3xl md:text-4xl text-gray-800">Ready for Automation? Get the Checklist.</h2>
+            <p class="mt-6 text-lg text-gray-600 leading-relaxed">
+                Enter your best email below to instantly receive the <span class="font-bold">7-Point Automation Checklist</span> and trigger your first automated sequence. This is the last step before you build your digital legacy.
+            </p>
+            
+            <form id="leadCaptureForm" class="mt-8 space-y-4">
+                <input type="email" id="emailInput" placeholder="Your Best Email Address" required 
+                       class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-dd-orange focus:border-dd-orange font-sans text-lg">
+                
+                <button type="submit" id="submitButton"
+                    class="w-full bg-dd-orange text-white font-headline text-xl py-4 px-12 rounded-lg shadow-lg hover:shadow-xl transition-shadow transform hover:-translate-y-0.5 duration-300 inline-block disabled:opacity-50">
+                    SEND ME THE 7-POINT CHECKLIST NOW
+                </button>
+
+                <p id="messageBox" class="text-center font-bold mt-4"></p>
+            </form>
+            
+            <p class="mt-8 text-sm text-gray-500">
+                <span class="font-bold">Leverage is not optional.</span> Stop letting Imposter Syndrome steal your wealth. This is your definitive second act, and it starts with this simple click.
+            </p>
+        </div>
+    </section>
+
+    <!-- Footer (unchanged) -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-6 text-center text-sm">
+            <p>&copy; 2025 DigitallyDefined. All Rights Reserved.</p>
+            <p class="mt-2 text-gray-400">Your Future, Redefined.</p>
+        </div>
+    </footer>
+
+    <script>
+        // --- Core Application Logic ---
+
+        // State for the Audit
+        let currentStep = 1;
+        const steps = [
+            document.getElementById('step-1'),
+            document.getElementById('step-2'),
+            document.getElementById('step-3'),
+            document.getElementById('audit-result')
+        ];
+
+        // Store audit results globally after Step 1 is complete
+        let auditResults = {
+            expertise: '',
+            pain: '',
+            energy: ''
+        };
+
+
+        // Function to move to the next audit step
+        function nextStep(stepNumber) {
+            // Simple validation check
+            if (stepNumber === 2) {
+                const expertise = document.getElementById('input-expertise').value.trim();
+                if (!expertise) return;
+            }
+            if (stepNumber === 3) {
+                const pain = document.getElementById('input-pain').value.trim();
+                if (!pain) return;
+            }
+
+            // Hide current step
+            steps[currentStep - 1].classList.add('hidden', 'opacity-0');
+            
+            // Show next step
+            currentStep = stepNumber;
+            steps[currentStep - 1].classList.remove('hidden');
+            // Timeout to allow the "hidden" class transition before removing "opacity-0"
+            setTimeout(() => {
+                steps[currentStep - 1].classList.remove('opacity-0');
+            }, 10); 
+        }
+
+        // Function to generate the Niche Statement
+        function generateNiche() {
+            const expertise = document.getElementById('input-expertise').value.trim();
+            const pain = document.getElementById('input-pain').value.trim();
+            const energy = document.getElementById('select-energy').value;
+
+            if (!expertise || !pain || !energy) {
+                // IMPORTANT: Use custom UI or console.log instead of alert()
+                console.error('Please complete all fields!');
+                return;
+            }
+            
+            // Store results
+            auditResults.expertise = expertise;
+            auditResults.pain = pain;
+            auditResults.energy = energy;
+
+            // Create the powerful niche statement
+            const statement = `I help Gen X women overcome <span class="dd-red">${pain}</span> using my high-value skill in <span class="dd-blue">${expertise}</span>, powered by my <span class="dd-orange">${energy}</span>.`;
+            
+            document.getElementById('niche-output').innerHTML = statement;
+            
+            // Log the action
+            console.log(`[AUDIT COMPLETE] Niche Statement: ${statement.replace(/<[^>]*>/g, '')}`);
+            
+            nextStep(4);
+        }
+
+        // Function to display the Ebook Blueprint (Step 2)
+        function displayEbookBlueprint() {
+            const { expertise, pain, energy } = auditResults;
+            
+            if (!expertise || !pain || !energy) {
+                 console.error('Error: Please complete the audit first!');
+                 resetAudit(); // Go back to start if missing data
+                 return;
+            }
+            
+            // 1. Generate dynamic content
+            const ebookTitle = `The Second Act Blueprint: Monetize Your ${expertise} Expertise to End ${pain}.`;
+            
+            const outline = [
+                {
+                    chapter: 'Part 1: The Soul-to-Skill Foundation (The Audit)',
+                    content: `The definitive proof that your decades of experience (the <span class="font-bold">${expertise}</span> skill) are worth a premium price. We stop the doubt and pinpoint the market demand.`
+                },
+                {
+                    chapter: 'Part 2: The Digital Asset Forge (The Shortcut)',
+                    content: `Using AI and technology to draft, design, and package this entire eBook in under 4 hours, ensuring it directly solves the painful problem of <span class="font-bold">${pain}</span>.`
+                },
+                {
+                    chapter: 'Part 3: The Leveraged System (Powered by You)',
+                    content: `How your natural <span class="font-bold">${energy}</span> approach informs the <em>delivery</em> and <em>tone</em> of your asset, making it unique and irresistible to your perfect client.`
+                },
+                {
+                    chapter: 'Part 4: Hands-Off Automation Stack (The Money Machine)',
+                    content: `Setting up the 24/7 sales funnel (emails, payment, delivery) so this asset builds your legacy while you get your time and energy back. <span class="font-bold">No more trading hours for dollars.</span>`
+                }
+            ];
+
+            // 2. Populate the UI
+            document.getElementById('ebook-title').textContent = ebookTitle;
+            const outlineList = document.getElementById('ebook-outline-list');
+            outlineList.innerHTML = '';
+            
+            outline.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.className = 'p-4 bg-white rounded-lg shadow-sm border-l-4 border-dd-orange';
+                li.innerHTML = `<p class="font-bold text-lg dd-blue">Chapter ${index + 1}: ${item.chapter}</p><p class="mt-1 text-gray-700">${item.content}</p>`;
+                outlineList.appendChild(li);
+            });
+
+            // 3. Display the Forge section and scroll to it
+            const assetForgeSection = document.getElementById('asset-forge');
+            assetForgeSection.classList.remove('hidden');
+             setTimeout(() => {
+                assetForgeSection.classList.remove('opacity-0');
+            }, 10); 
+            assetForgeSection.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Function to save the Blueprint to Firestore
+        async function saveBlueprint() {
+            const saveMessage = document.getElementById('saveMessage');
+            const saveButton = document.getElementById('saveBlueprintButton');
+            
+            if (!window.isFirebaseReady || !window.db || !window.auth.currentUser) {
+                saveMessage.className = 'text-red-500 mt-2';
+                saveMessage.textContent = 'System not ready. Please wait a moment.';
+                console.error("Firebase or Auth not initialized.");
+                return;
+            }
+
+            const userId = window.auth.currentUser.uid;
+            
+            // Reconstruct the data to save
+            const blueprintData = {
+                title: document.getElementById('ebook-title').textContent,
+                niche: document.getElementById('niche-output').textContent.replace(/<[^>]*>/g, ''),
+                expertise: auditResults.expertise,
+                pain: auditResults.pain,
+                energy: auditResults.energy,
+                timestamp: new Date().toISOString(),
+                status: 'Blueprint Saved - Ready for Content Drafting'
+            };
+            
+            saveButton.disabled = true;
+            saveButton.textContent = 'SAVING...';
+
+            try {
+                // Save blueprint to Firestore in the user's private collection path
+                const collectionPath = `/artifacts/${window.appId}/users/${userId}/blueprints`;
+                const docRef = await addDoc(collection(window.db, collectionPath), blueprintData);
+                
+                // Update UI
+                saveMessage.className = 'text-green-600 mt-2';
+                saveMessage.innerHTML = 'Success! Your <span class="font-bold">Digital Asset Blueprint</span> is saved. You are ready for content drafting (Step 2.5).';
+                
+                console.log(`[ASSET FORGE] Blueprint saved successfully (ID: ${docRef.id}) for User: ${userId}`);
+
+            } catch (e) {
+                console.error("Error saving blueprint:", e);
+                saveMessage.className = 'text-red-500 mt-2';
+                saveMessage.textContent = 'Error: Could not save the blueprint. Check console for details.';
+            } finally {
+                saveButton.disabled = false;
+                saveButton.textContent = 'SAVE BLUEPRINT TO FIRESTORE';
+            }
+        }
+        
+        // Function to reset the audit
+        function resetAudit() {
+            // Reset inputs
+            document.getElementById('input-expertise').value = '';
+            document.getElementById('input-pain').value = '';
+            document.getElementById('select-energy').value = '';
+            auditResults = { expertise: '', pain: '', energy: '' };
+
+            // Reset state and show step 1
+            steps.forEach(step => step.classList.add('hidden', 'opacity-0'));
+            document.getElementById('asset-forge').classList.add('hidden', 'opacity-0');
+            currentStep = 1;
+            steps[0].classList.remove('hidden');
+            setTimeout(() => {
+                steps[0].classList.remove('opacity-0');
+            }, 10); 
+        }
+        
+        // --- Automation Stack Logic (Lead Capture) ---
+
+        /**
+         * Core function to capture the lead and simulate the automation trigger.
+         */
+        async function captureLeadAndAutomate(email) {
+            const messageBox = document.getElementById('messageBox');
+            const submitButton = document.getElementById('submitButton');
+            
+            if (!window.isFirebaseReady || !window.db || !window.auth.currentUser) {
+                messageBox.className = 'text-red-500 mt-4';
+                messageBox.textContent = 'System not ready. Please wait a moment and try again.';
+                console.error("Firebase or Auth not initialized.");
+                return;
+            }
+
+            const userId = window.auth.currentUser.uid;
+            
+            // 1. Prepare Lead Data
+            const leadData = {
+                email: email,
+                timestamp: new Date().toISOString(),
+                source: 'DigitallyDefinedSalesPage',
+                userId: userId,
+                status: 'pending_automation' 
+            };
+            
+            submitButton.disabled = true;
+            submitButton.textContent = 'SAVING LEAD & TRIGGERING AUTOMATION...';
+
+            try {
+                // 2. Save lead to Firestore in the public collection path
+                const collectionPath = `/artifacts/${window.appId}/public/data/leads`;
+                const docRef = await addDoc(collection(window.db, collectionPath), leadData);
+                
+                // 3. Update UI and simulate automation trigger
+                messageBox.className = 'text-green-600 mt-4';
+                messageBox.innerHTML = 'Success! Your <span class="font-bold">Checklist is on its way.</span> Automation sequence has been triggered.';
+                
+                // Log the action (Simulates the email service trigger)
+                console.log(`[AUTOMATION TRIGGER] Lead saved (ID: ${docRef.id}). Notifying Email Service to start nurture sequence for: ${email}`);
+
+                // Clear the form after success
+                document.getElementById('emailInput').value = '';
+
+            } catch (e) {
+                console.error("Error adding document or triggering automation:", e);
+                messageBox.className = 'text-red-500 mt-4';
+                messageBox.textContent = 'Error: Could not save your lead. Check console for details.';
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'SEND ME THE 7-POINT CHECKLIST NOW';
+            }
+        }
+
+        // 4. Attach form listener once the DOM is loaded
+        function initializeLeadForm() {
+            const form = document.getElementById('leadCaptureForm');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const emailInput = document.getElementById('emailInput');
+                    const email = emailInput.value.trim();
+                    if (email) {
+                        captureLeadAndAutomate(email);
+                    }
+                });
+            }
+        }
+        
+        // Wait for Firebase to be ready before attaching the form handler
+        if (window.isFirebaseReady) {
+            initializeLeadForm();
+        } else {
+            window.onFirebaseReady = initializeLeadForm;
+        }
+
+        // --- Front-end Interactions (Framework/FAQ/Chart) ---
+        document.addEventListener('DOMContentLoaded', function() {
+            // Framework Card Interaction
+            const frameworkCards = document.querySelectorAll('.framework-card');
+            frameworkCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const wasActive = card.classList.contains('active');
+                    frameworkCards.forEach(c => c.classList.remove('active'));
+                    if (!wasActive) {
+                        card.classList.add('active');
+                    }
+                });
+            });
+
+            // FAQ Accordion Interaction
+            const faqItems = document.querySelectorAll('.faq-item');
+            faqItems.forEach(item => {
+                const question = item.querySelector('.faq-question');
+                question.addEventListener('click', () => {
+                    const wasActive = item.classList.contains('active');
+                    faqItems.forEach(i => i.classList.remove('active'));
+                    
+                    // Only open the clicked item if it was not already active (toggle)
+                    if(!wasActive) {
+                        item.classList.add('active');
+                    }
+                });
+            });
+
+            // Bonus Chart 
+            const canvas = document.getElementById('bonusChart');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Mindset Toolkit', 'Automation Vault', 'Legacy Roadmap'],
+                        datasets: [{
+                            label: 'Bonus Value ($)',
+                            data: [497, 350, 400],
+                            backgroundColor: [
+                                'rgba(71, 183, 212, 0.7)',
+                                'rgba(241, 139, 37, 0.7)',
+                                'rgba(45, 55, 72, 0.7)'
+                            ],
+                            borderColor: [
+                                '#47B7D4',
+                                '#F18B25',
+                                '#2D3748'
+                            ],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return ` Value: $${context.raw}`; } } } },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                title: { display: true, text: 'Value in USD ($)', font: { size: 14, family: "'DM Sans', sans-serif" } }
+                            },
+                            y: {
+                                ticks: { font: { size: 14, family: "'DM Sans', sans-serif", weight: 'bold' } }
+                            }
+                        }
+                    }
+                });
+            } else {
+                console.warn("Chart element 'bonusChart' not found. Chart initialization skipped.");
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Content Generator - Digitally Defined</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Oswald for headlines, DM Sans for body -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Oswald:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Define custom CSS variables for brand colors */
+        :root {
+            --dd-orange: #F18B25;
+            --dd-blue: #47B7D4;
+            --dd-red: #C20F0A;
+            --dd-background: #FFFCF9;
+            --dd-card: #FFFFFF;
+            --dd-text: #2D3748;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: var(--dd-background); /* Background #FFFCF9 */
+            color: var(--dd-text); /* Text #2D3748 */
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Oswald', Impact, sans-serif; /* Headlines: Oswald */
+            color: var(--dd-text);
+        }
+
+        .btn-primary {
+            background-color: var(--dd-orange); /* Primary DD Orange #F18B25 */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary:hover {
+            background-color: #e07a1c; /* Slightly darker orange on hover */
+        }
+
+        .card {
+            background-color: var(--dd-card); /* Card #FFFFFF */
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--dd-orange); /* DD Orange spinner */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+            display: none; /* Hidden by default */
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Custom scrollbar for content area */
+        .content-output::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .content-output::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .content-output::-webkit-scrollbar-thumb {
+            background: var(--dd-orange); /* DD Orange scrollbar thumb */
+            border-radius: 10px;
+        }
+
+        .content-output::-webkit-scrollbar-thumb:hover {
+            background: #e07a1c;
+        }
+
+        /* Custom styles for DD Blue sections */
+        .dd-blue-bg {
+            background-color: var(--dd-blue); /* Secondary DD Blue #47B7D4 */
+        }
+        .dd-blue-border {
+            border-color: #389db8; /* Slightly darker DD Blue for border */
+        }
+        .dd-blue-text {
+            color: white; /* White text for contrast on DD Blue background */
+        }
+        .dd-blue-text-dark {
+            color: #2D3748; /* Dark text for elements on light blue background, or headings */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="container max-w-4xl w-full mx-auto card p-8 md:p-12">
+        <h1 class="text-4xl md:text-5xl font-bold text-center mb-8 leading-tight">
+            SEO Content Generator
+        </h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <label for="keywords" class="block text-lg font-medium mb-2">
+                    What's your power keyword today?
+                </label>
+                <input type="text" id="keywords" placeholder="e.g., digital marketing for Gen X women"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#47B7D4] text-lg">
+            </div>
+            <div>
+                <label for="targetAudience" class="block text-lg font-medium mb-2">
+                    Who are you speaking to?
+                </label>
+                <input type="text" id="targetAudience" value="Gen X women entrepreneurs"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#47B7D4] text-lg">
+            </div>
+            <div>
+                <label for="contentType" class="block text-lg font-medium mb-2">
+                    What kind of content is this?
+                </label>
+                <select id="contentType" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#47B7D4] text-lg">
+                    <option value="Blog Post">Blog Post</option>
+                    <option value="Social Media Post">Social Media Post</option>
+                    <option value="Email Newsletter">Email Newsletter</option>
+                    <option value="Website Page">Website Page</option>
+                    <option value="Product Description">Product Description</option>
+                    <option value="Other">Other (specify in key messages)</option>
+                </select>
+            </div>
+            <div>
+                <label for="desiredTone" class="block text-lg font-medium mb-2">
+                    Any specific tone nuances?
+                </label>
+                <input type="text" id="desiredTone" value="direct, empowering, high-energy, action-oriented, confident, cheeky"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#47B7D4] text-lg">
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <label for="keyMessages" class="block text-lg font-medium mb-2">
+                What key messages or calls to action must be included?
+            </label>
+            <textarea id="keyMessages" rows="3" placeholder="e.g., Discover your digital superpowers, No more excuses, Own your power, Join the Digitally Defined community"
+                      class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#47B7D4] text-lg"></textarea>
+        </div>
+
+        <div class="flex justify-center mb-8">
+            <button id="generateBtn" class="btn-primary">
+                Generate Content & Own Your Power!
+            </button>
+        </div>
+
+        <div id="loadingIndicator" class="loading-spinner"></div>
+
+        <div id="messageBox" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-4" role="alert">
+            <strong class="font-bold">Heads Up!</strong>
+            <span id="messageText" class="block sm:inline"></span>
+            <span class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer" onclick="document.getElementById('messageBox').classList.add('hidden')">
+                <svg class="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/></svg>
+            </span>
+        </div>
+
+        <div id="contentOutput" class="content-output bg-gray-50 p-6 rounded-lg border border-gray-200 min-h-[300px] max-h-[600px] overflow-y-auto text-lg leading-relaxed shadow-inner">
+            <p class="text-gray-500 text-center">Your killer content will appear here. Let's get real!</p>
+        </div>
+
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="dd-blue-bg dd-blue-border p-6 rounded-lg border">
+                <h2 class="text-2xl font-bold mb-3 dd-blue-text-dark">Keyword Insights</h2>
+                <div id="keywordInsightsContent" class="dd-blue-text">
+                    <p>This is where we'd feed you more golden keyword suggestions to supercharge your reach. For now, focus on your main power word!</p>
+                </div>
+            </div>
+            <div class="dd-blue-bg dd-blue-border p-6 rounded-lg border">
+                <h2 class="text-2xl font-bold mb-3 dd-blue-text-dark">Readability Score</h2>
+                <div id="readabilityScoreContent" class="dd-blue-text">
+                    <p>We'll ensure your content is clear, concise, and captivating for your audience. Aim for a score that makes your message pop!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // --- Digitally Defined SEO Content Generator Logic Flow ---
+
+        // 1. Global variables for Firebase config and app ID (if needed for auth)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // 2. Get references to all important DOM elements
+        const generateBtn = document.getElementById('generateBtn');
+        const keywordsInput = document.getElementById('keywords');
+        const targetAudienceInput = document.getElementById('targetAudience');
+        const contentTypeSelect = document.getElementById('contentType');
+        const desiredToneInput = document.getElementById('desiredTone');
+        const keyMessagesInput = document.getElementById('keyMessages');
+
+        const contentOutput = document.getElementById('contentOutput');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+        const keywordInsightsContent = document.getElementById('keywordInsightsContent');
+        const readabilityScoreContent = document.getElementById('readabilityScoreContent');
+
+        // 3. Show a message to the user (error or success)
+        function showMessage(message, type = 'error') {
+            messageText.textContent = message;
+            messageBox.classList.remove('hidden');
+            if (type === 'error') {
+                // Style for error
+                messageBox.classList.remove('bg-[#47B7D4]', 'border-[#389db8]', 'text-white');
+                messageBox.classList.add('bg-red-100', 'border-red-400', 'text-red-700');
+            } else {
+                // Style for success/info
+                messageBox.classList.remove('bg-red-100', 'border-red-400', 'text-red-700');
+                messageBox.classList.add('bg-[#47B7D4]', 'border-[#389db8]', 'text-white');
+            }
+        }
+
+        // 4. Hide the message box
+        function hideMessage() {
+            messageBox.classList.add('hidden');
+        }
+
+        // 5. Main logic: When the user clicks "Generate"
+        generateBtn.addEventListener('click', async () => {
+            // --- Step 1: Gather user input ---
+            const keywords = keywordsInput.value.trim();
+            const targetAudience = targetAudienceInput.value.trim();
+            const contentType = contentTypeSelect.value;
+            const desiredTone = desiredToneInput.value.trim();
+            const keyMessages = keyMessagesInput.value.trim();
+
+            // --- Step 2: Validate input ---
+            if (!keywords) {
+                showMessage("Come on, Francesca! You need to give me some keywords to work with. No excuses!");
+                return;
+            }
+
+            // --- Step 3: Prepare UI for loading ---
+            hideMessage();
+            contentOutput.innerHTML = ''; // Clear previous content
+            keywordInsightsContent.innerHTML = '<p>Generating insights...</p>';
+            readabilityScoreContent.innerHTML = '<p>Calculating score...</p>';
+            loadingIndicator.style.display = 'block'; // Show spinner
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating... Hold Tight!';
+
+            try {
+                // --- Step 4: Build prompt for the AI ---
+                const prompt = `Generate SEO-optimized content for the keyword "${keywords}".
+                Target Audience: ${targetAudience}.
+                Content Type: ${contentType}.
+                Desired Tone: ${desiredTone}.
+                Key Messages/Call to Action: ${keyMessages || 'Encourage the reader to discover their digital superpowers and embrace entrepreneurship.'}
+
+                The content should be engaging, informative, and structured with clear headings (H2, H3) and paragraphs.
+                Ensure the language is pragmatic, straight forward, and no-BS, like a bestie who tells it like it is.
+                Include key mantras like "Let's get real." and "No more excuses." naturally within the text.
+                The content should be at least 400 words.
+
+                After the main content, provide 3-5 related long-tail keywords or common questions that complement the main keyword. Format these as a bulleted list under a heading like "Related Keywords:".`;
+
+                // --- Step 5: Prepare API call to Gemini ---
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+                const payload = { contents: chatHistory };
+                const apiKey = ""; // Canvas will automatically provide the API key at runtime
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                // --- Step 6: Make the API call ---
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`API error: ${response.status} ${response.statusText} - ${errorData.error.message || 'Unknown error'}`);
+                }
+
+                const result = await response.json();
+
+                // --- Step 7: Handle and display the AI's response ---
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const generatedResponse = result.candidates[0].content.parts[0].text;
+
+                    // Split the response into main content and keyword insights
+                    const keywordSectionStart = generatedResponse.indexOf("Related Keywords:");
+                    let mainContent = generatedResponse;
+                    let keywordsText = '';
+
+                    if (keywordSectionStart !== -1) {
+                        mainContent = generatedResponse.substring(0, keywordSectionStart).trim();
+                        keywordsText = generatedResponse.substring(keywordSectionStart).trim();
+                    }
+
+                    // --- Format main content: Markdown to HTML ---
+                    let formattedContent = mainContent
+                        .replace(/### (.*)/g, '<h3>$1</h3>')
+                        .replace(/## (.*)/g, '<h2>$1</h2>')
+                        .replace(/\*\*(.*?)\*\*/g, '<strong class="text-[#F18B25]">$1</strong>')
+                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                        .replace(/\n\n/g, '<p>')
+                        .replace(/\n/g, '<br>');
+
+                    contentOutput.innerHTML = formattedContent;
+
+                    // --- Format Keyword Insights ---
+                    if (keywordsText) {
+                        keywordInsightsContent.innerHTML = keywordsText
+                            .replace(/Related Keywords:/g, '<strong>Related Keywords:</strong>')
+                            .replace(/\* (.*)/g, '<li>$1</li>')
+                            .replace(/^- (.*)/gm, '<li>$1</li>');
+                        keywordInsightsContent.innerHTML = `<ul>${keywordInsightsContent.innerHTML}</ul>`;
+                    } else {
+                        keywordInsightsContent.innerHTML = '<p>No specific related keywords were generated this time. Keep rocking!</p>';
+                    }
+
+                    // --- Calculate and display Readability Score ---
+                    const words = mainContent.split(/\s+/).filter(word => word.length > 0).length;
+                    const sentences = mainContent.split(/[.!?]+\s*/).filter(sentence => sentence.length > 0).length;
+                    let readabilityScore = 0;
+                    let readabilityComment = "Let's get real: aim for clear, concise content!";
+
+                    if (words > 0 && sentences > 0) {
+                        readabilityScore = Math.round(206.835 - 1.015 * (words / sentences) - 84.6 * (mainContent.split(/[aeiouyAEIOUY]{1,}/).length / words));
+                        if (readabilityScore >= 90) readabilityComment = "Excellent! Your content is super easy to read. Own your power!";
+                        else if (readabilityScore >= 70) readabilityComment = "Great! Your content is clear and engaging. No excuses, keep it up!";
+                        else if (readabilityScore >= 50) readabilityComment = "Good! Your content is understandable, but could be snappier. Challenge yourself!";
+                        else readabilityComment = "Needs work. Let's simplify and punch up that message. You got this!";
+                    } else {
+                        readabilityScore = "N/A";
+                        readabilityComment = "Not enough content to calculate readability yet. Get writing!";
+                    }
+
+                    readabilityScoreContent.innerHTML = `<p class="font-bold text-xl">${readabilityScore} <span class="text-sm font-normal">(Flesch-Kincaid est.)</span></p><p>${readabilityComment}</p>`;
+
+                    showMessage("Content generated and insights updated! Now go own those search results!", 'success');
+                } else {
+                    showMessage("Whoops! Couldn't generate content. The AI might be taking a coffee break. Try again!");
+                }
+
+            } catch (error) {
+                // --- Handle errors gracefully ---
+                console.error('Error generating content:', error);
+                showMessage(`Error: ${error.message}. Something went wrong. Let's troubleshoot!`);
+            } finally {
+                // --- Step 8: Reset UI ---
+                loadingIndicator.style.display = 'none';
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate Content & Own Your Power!';
+            }
+        });
+
+        // 6. Set initial placeholder messages on page load
+        window.onload = () => {
+            contentOutput.innerHTML = '<p class="text-gray-500 text-center">Your killer content will appear here. Let\'s get real!</p>';
+            keywordInsightsContent.innerHTML = '<p>This is where we\'d feed you more golden keyword suggestions to supercharge your reach. For now, focus on your main power word!</p>';
+            readabilityScoreContent.innerHTML = '<p>We\'ll ensure your content is clear, concise, and captivating for your audience. Aim for a score that makes your message pop!</p>';
+        };
+    </script>
+</body>
+</html>

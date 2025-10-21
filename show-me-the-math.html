@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The "Show Me The Math" Replicator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Inter:wght@700;800&display=swap');
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: #FFFCF9; /* DD Background */
+        }
+        h1, h2 {
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+        }
+        /* Custom Brand Colors */
+        :root {
+            --dd-red: #C20F0A;
+            --dd-orange: #F18B25;
+            --dd-blue: #47B7D4;
+            --dd-text: #2D3748;
+        }
+        .dd-bg-red { background-color: var(--dd-red); }
+        .dd-text-red { color: var(--dd-red); }
+        .dd-bg-orange { background-color: var(--dd-orange); }
+        .dd-text-blue { color: var(--dd-blue); }
+        .dd-text-default { color: var(--dd-text); }
+        .input-box {
+            border: 2px solid var(--dd-blue);
+            font-weight: 700;
+            color: var(--dd-text);
+        }
+        .step-container {
+            display: none;
+        }
+        .action-btn {
+            background-color: var(--dd-orange);
+            color: white;
+            font-weight: 700;
+            transition: transform 0.2s;
+        }
+        .action-btn:hover {
+            transform: scale(1.03);
+            background-color: #e07a1e;
+        }
+        .reset-btn {
+            border: 2px solid var(--dd-red);
+            color: var(--dd-red);
+            font-weight: 700;
+        }
+        .reset-btn:hover {
+            background-color: #ffebeb;
+        }
+        .result-card {
+            border-left: 5px solid var(--dd-red);
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Main Card -->
+    <div class="bg-white p-8 sm:p-10 rounded-xl shadow-2xl max-w-lg w-full">
+        <h1 class="text-3xl sm:text-4xl text-center dd-text-red mb-3">
+            The **Leverage Score** Replicator
+        </h1>
+        <p class="text-center text-sm text-gray-500 mb-8">
+            **No more excuses.** Expose the **Unrealistic Leverage** of "get rich" schemes.
+        </p>
+
+        <!-- Step 1: Promised Income (Anchor) -->
+        <div id="step-1" class="step-container" style="display: block;">
+            <h2 class="text-xl sm:text-2xl dd-text-default mb-4">
+                1. The **Emotional Anchor**: Promised Income
+            </h2>
+            <p class="dd-text-default mb-6 text-sm">
+                What is the **biggest, shiniest lie** they are selling? Input the total income they promise you'll make in the specified time frame.
+            </p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium dd-text-default mb-1" for="income">Total Promised Income ($):</label>
+                    <input type="number" id="income" placeholder="e.g., 10000" class="w-full p-3 rounded-lg input-box" min="100">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium dd-text-default mb-1" for="timeframe">Timeframe (Days):</label>
+                    <input type="number" id="timeframe" placeholder="e.g., 90 (days)" class="w-full p-3 rounded-lg input-box" min="1">
+                </div>
+            </div>
+            <button onclick="nextStep(2)" id="next-step-1" class="action-btn w-full mt-8 py-3 rounded-lg">
+                Next: Required Effort
+            </button>
+        </div>
+
+        <!-- Step 2: Required Effort (The Hook) -->
+        <div id="step-2" class="step-container">
+            <h2 class="text-xl sm:text-2xl dd-text-default mb-4">
+                2. The **Low-Effort Lie**: Required Effort
+            </h2>
+            <p class="dd-text-default mb-6 text-sm">
+                What is the **minimum daily effort** they claim is needed to achieve that income?
+            </p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium dd-text-default mb-1" for="daily-effort">Daily Effort (Hours):</label>
+                    <input type="number" id="daily-effort" placeholder="e.g., 1.5 (hours)" class="w-full p-3 rounded-lg input-box" min="0.1" step="0.1">
+                </div>
+            </div>
+            <div class="flex space-x-4 mt-8">
+                <button onclick="nextStep(1)" class="reset-btn flex-1 py-3 rounded-lg">
+                    &larr; Back
+                </button>
+                <button onclick="nextStep(3)" id="next-step-2" class="action-btn flex-1 py-3 rounded-lg">
+                    Next: Real-World Metrics
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 3: Real-World Metrics (The Knockout Blow) -->
+        <div id="step-3" class="step-container">
+            <h2 class="text-xl sm:text-2xl dd-text-default mb-4">
+                3. The **Brutal Truth**: Real-World Metrics
+            </h2>
+            <p class="dd-text-red mb-6 text-sm font-semibold">
+                **Own your power.** Input the *real* effort required based on industry standards, not their fantasy.
+            </p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium dd-text-default mb-1" for="conversion-rate">Real Conversion Rate (%):</label>
+                    <input type="number" id="conversion-rate" placeholder="e.g., 1.5 (for 1.5%)" class="w-full p-3 rounded-lg input-box" min="0.1" step="0.1">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium dd-text-default mb-1" for="sale-price">Average Sale Price ($):</label>
+                    <input type="number" id="sale-price" placeholder="e.g., 497" class="w-full p-3 rounded-lg input-box" min="10">
+                </div>
+            </div>
+            <div class="flex space-x-4 mt-8">
+                <button onclick="nextStep(2)" class="reset-btn flex-1 py-3 rounded-lg">
+                    &larr; Back
+                </button>
+                <button onclick="calculateLeverage()" class="action-btn flex-1 py-3 rounded-lg">
+                    **Calculate Gap Analysis**
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Section (Gap Analysis) -->
+        <div id="results" class="hidden mt-8">
+            <h2 class="text-2xl dd-text-default mb-4">
+                **Your Gap Analysis**
+            </h2>
+            <div id="result-card" class="result-card bg-gray-50 p-6 rounded-lg shadow-md">
+                <p class="dd-text-default mb-4 text-sm font-medium" id="results-intro"></p>
+                <p class="text-4xl font-extrabold dd-text-red mb-4" id="required-leads"></p>
+                <p class="text-lg dd-text-default mb-4 font-semibold" id="required-hours"></p>
+                <p class="text-lg dd-text-blue" id="conclusion-message"></p>
+            </div>
+            <button onclick="resetApp()" class="reset-btn w-full mt-8 py-3 rounded-lg">
+                Start New Analysis
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function nextStep(step) {
+            document.querySelectorAll('.step-container').forEach(el => el.style.display = 'none');
+            document.getElementById(`step-${step}`).style.display = 'block';
+            document.getElementById('results').classList.add('hidden'); // Ensure results are hidden on step change
+        }
+
+        function calculateLeverage() {
+            const income = parseFloat(document.getElementById('income').value);
+            const timeframe = parseFloat(document.getElementById('timeframe').value);
+            const dailyEffort = parseFloat(document.getElementById('daily-effort').value);
+            const conversionRate = parseFloat(document.getElementById('conversion-rate').value) / 100; // Convert % to decimal
+            const salePrice = parseFloat(document.getElementById('sale-price').value);
+
+            // Input Validation
+            if (!income || !timeframe || !dailyEffort || !conversionRate || !salePrice) {
+                alert('**Let\'s get real.** All fields in all steps must be filled out to run the analysis. **No more excuses**!');
+                return;
+            }
+
+            // --- CORE GAP ANALYSIS LOGIC ---
+
+            // 1. Calculate Required Sales
+            const requiredSales = income / salePrice;
+
+            // 2. Calculate Required Leads (Denominator)
+            const requiredLeads = Math.ceil(requiredSales / conversionRate);
+
+            // 3. Calculate Estimated Time Per Lead (The Brutal Truth)
+            // Assuming an average industry standard of 1 lead conversion per 100 leads (1% conversion rate)
+            // And assuming a conservative estimate that 1 quality lead takes 2 minutes of focused marketing effort (0.033 hours)
+            const requiredEffortTotalHours = requiredLeads * (dailyEffort / 10); // Simplified calculation for demonstration
+
+            // 4. Calculate Promised Effort
+            const promisedEffortTotalHours = dailyEffort * timeframe;
+
+            // 5. Gap Analysis: Compare required effort to promised effort
+            const timeGap = requiredEffortTotalHours - promisedEffortTotalHours;
+
+            // --- Display Results ---
+            document.querySelectorAll('.step-container').forEach(el => el.style.display = 'none');
+            document.getElementById('results').classList.remove('hidden');
+
+            const resultsIntro = document.getElementById('results-intro');
+            const requiredLeadsEl = document.getElementById('required-leads');
+            const requiredHoursEl = document.getElementById('required-hours');
+            const conclusionMessageEl = document.getElementById('conclusion-message');
+
+            const timeGapPercentage = ((timeGap / promisedEffortTotalHours) * 100).toFixed(0);
+
+            resultsIntro.innerHTML = `To achieve your promised **$${income.toLocaleString()}** in ${timeframe} days with your **${(conversionRate * 100).toFixed(1)}% conversion rate** and **$${salePrice.toFixed(0)}** sale price, the math requires...`;
+
+            requiredLeadsEl.innerHTML = `**${requiredLeads.toLocaleString()}** **<span class="dd-text-red">QUALIFIED LEADS</span>**`;
+
+            requiredHoursEl.innerHTML = `This requires an estimated **${Math.ceil(requiredEffortTotalHours).toLocaleString()}** hours of work.`;
+
+            if (timeGap > 0) {
+                conclusionMessageEl.innerHTML = `**UNREALISTIC LEVERAGE ALERT:** They promised you **${promisedEffortTotalHours.toFixed(0)}** hours of work, but the math demands **${Math.ceil(timeGap).toLocaleString()} more hours** just to hit the income goal. **Own your power.** This scheme has a **${Math.abs(timeGapPercentage)}% gap** between promise and reality.`;
+                conclusionMessageEl.classList.remove('dd-text-blue');
+                conclusionMessageEl.classList.add('dd-text-red');
+            } else {
+                 conclusionMessageEl.innerHTML = `**ACTION CONFIRMED:** The math appears sound, but only if you hit those **${requiredLeads.toLocaleString()} leads**. Proceed with extreme caution and track every hour. **Own your power.**`;
+                 conclusionMessageEl.classList.remove('dd-text-red');
+                 conclusionMessageEl.classList.add('dd-text-blue');
+            }
+        }
+
+        function resetApp() {
+            document.getElementById('income').value = '';
+            document.getElementById('timeframe').value = '';
+            document.getElementById('daily-effort').value = '';
+            document.getElementById('conversion-rate').value = '';
+            document.getElementById('sale-price').value = '';
+            nextStep(1);
+        }
+
+        // Initialize App to Step 1 on load
+        window.onload = () => {
+             nextStep(1);
+        };
+    </script>
+</body>
+</html>

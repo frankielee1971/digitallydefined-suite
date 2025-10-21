@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Superpower Assessment - DigitallyDefined</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Inter:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Fonts */
+        .font-inter-bold { font-family: 'Inter', sans-serif; font-weight: 700; }
+        .font-dm-sans { font-family: 'DM Sans', sans-serif; }
+        .text-dd-orange { color: #F18B25; }
+        .bg-dd-orange { background-color: #F18B25; }
+        .bg-dd-blue { background-color: #47B7D4; }
+        .bg-accent-red { background-color: #C20F0A; }
+        .bg-app-background { background-color: #FFFCF9; }
+        .text-app-text { color: #2D3748; }
+        /* Custom scrollbar for output area */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #F18B25; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background-color: #FFFCF9; }
+        /* TITLE LIFT: Adds a subtle shadow in DD Blue to make the text pop */
+        .title-shadow {
+            text-shadow: 1.5px 1.5px 0px rgba(71, 183, 212, 0.6); /* DD Blue shadow */
+        }
+    </style>
+</head>
+<body class="bg-app-background text-app-text font-dm-sans min-h-screen p-4 sm:p-8">
+
+    <!-- Header & Title -->
+    <header class="text-center mb-10">
+        <h1 class="text-3xl sm:text-4xl font-inter-bold text-dd-orange title-shadow inline-block p-1">
+            DIGITALLYDEFINED: AI SUPERPOWER ASSESSMENT
+        </h1>
+        <p class="text-lg mt-2 font-dm-sans">
+            <span class="font-bold">Let's get real.</span> No more excuses. Own your power.
+        </p>
+    </header>
+
+    <main class="max-w-6xl mx-auto">
+        <!-- Input Panel -->
+        <section id="input-section" class="bg-white rounded-xl shadow-lg p-6 mb-10 border-t-4 border-dd-blue">
+            <h2 class="text-2xl font-inter-bold mb-4 text-dd-blue">Step 1: Get Real with Your Digital Navigator</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="digitalGoal" class="block font-bold text-app-text mb-1">
+                        1. Your Digital Goal (Be Specific, No Fluff):
+                    </label>
+                    <input type="text" id="digitalGoal" placeholder="Example: Launch a high-ticket coaching funnel leveraging my 20 years in finance."
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-dd-orange focus:border-dd-orange font-dm-sans" required>
+                </div>
+                <div>
+                    <label for="careerInput" class="block font-bold text-app-text mb-1">
+                        2. Career & Digital History (The Honest Truth - The more you give, the better the plan!):
+                    </label>
+                    <textarea id="careerInput" rows="6" placeholder="Tell me about your career, your core expertise, what digital tools you've used (even just Facebook!), and what you're currently struggling with. Spill it."
+                              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-dd-orange focus:border-dd-orange font-dm-sans" required></textarea>
+                </div>
+                <button id="runAssessmentButton" onclick="runAssessment()"
+                        class="w-full bg-dd-orange text-white font-inter-bold py-3 rounded-lg hover:bg-opacity-90 transition duration-150 shadow-md transform hover:scale-[1.01] disabled:bg-gray-400">
+                    RUN SUPERPOWER ASSESSMENT
+                </button>
+                <p id="error-message" class="text-accent-red font-dm-sans text-center hidden mt-2"></p>
+            </div>
+        </section>
+
+        <!-- Loading Spinner -->
+        <section id="loading-section" class="text-center py-12 hidden">
+            <div class="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-20 w-20 mx-auto mb-4" style="border-top-color: #F18B25;"></div>
+            <p class="text-xl font-inter-bold text-dd-blue">Your Digital Navigator is calculating your digital leverage... Give it a minute.</p>
+        </section>
+
+        <!-- Output Panel -->
+        <section id="output-section" class="hidden">
+            <h2 class="text-3xl font-inter-bold mb-6 text-center text-dd-orange">
+                YOUR DIGITAL SUPERPOWER BLUEPRINT
+            </h2>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- 1. Skill Gaps -->
+                <div class="bg-white rounded-xl shadow-xl p-6 border-l-4 border-accent-red custom-scrollbar max-h-96 overflow-y-auto">
+                    <h3 class="text-xl font-inter-bold mb-3 text-accent-red">1. Personalized Skill Gaps: (The Honest Truth)</h3>
+                    <ul id="skillGapsList" class="space-y-4 font-dm-sans">
+                        <!-- Content here -->
+                    </ul>
+                </div>
+
+                <!-- 2. Strength-Based Opportunities -->
+                <div class="bg-white rounded-xl shadow-xl p-6 border-l-4 border-dd-orange custom-scrollbar max-h-96 overflow-y-auto">
+                    <h3 class="text-xl font-inter-bold mb-3 text-dd-orange">2. Strength-Based Opportunities: (Maximize Leverage)</h3>
+                    <ul id="strengthOpportunitiesList" class="space-y-4 font-dm-sans">
+                        <!-- Content here -->
+                    </ul>
+                </div>
+
+                <!-- 3. Tailored Resource Recommendations -->
+                <div class="md:col-span-2 bg-white rounded-xl shadow-xl p-6 border-l-4 border-dd-blue custom-scrollbar max-h-96 overflow-y-auto">
+                    <h3 class="text-xl font-inter-bold mb-3 text-dd-blue">3. Tailored Resource Recommendations: (No More Burnout!)</h3>
+                    <ul id="resourceRecommendationsList" class="space-y-4 grid sm:grid-cols-2 gap-4 font-dm-sans">
+                        <!-- Content here -->
+                    </ul>
+                </div>
+
+                <!-- 4. Customized Action Plans -->
+                <div class="md:col-span-2 bg-white rounded-xl shadow-xl p-6 border-l-4 border-dd-orange custom-scrollbar max-h-96 overflow-y-auto">
+                    <h3 class="text-xl font-inter-bold mb-3 text-dd-orange">4. Customized Action Plan: (Incremental Steps to Digital Real Estate)</h3>
+                    <ol id="actionPlanList" class="space-y-4 font-dm-sans list-decimal ml-5">
+                        <!-- Content here -->
+                    </ol>
+                </div>
+
+            </div>
+
+            <!-- Export Button -->
+            <div class="text-center mt-8">
+                <button onclick="exportResults()" class="bg-dd-blue text-white font-inter-bold py-3 px-8 rounded-lg hover:bg-opacity-90 transition duration-150 shadow-md transform hover:scale-[1.01]">
+                    EXPORT YOUR BLUEPRINT (TEXT)
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal for Export Confirmation -->
+    <div id="export-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-xl p-6 w-full max-w-lg shadow-2xl border-t-4 border-dd-orange">
+            <h3 class="text-2xl font-inter-bold text-dd-orange mb-4">Blueprint Ready!</h3>
+            <p class="mb-4 font-dm-sans">Your action plan is ready for copy/paste. **Own your power.**</p>
+            <textarea id="export-text-area" rows="10" readonly class="w-full p-3 border border-gray-300 rounded-lg font-dm-sans text-sm bg-gray-50"></textarea>
+            <div class="mt-4 flex justify-end space-x-3">
+                <button onclick="copyToClipboardAndCloseModal()" class="bg-dd-blue text-white font-inter-bold py-2 px-4 rounded-lg hover:bg-opacity-90">
+                    Copy & Close
+                </button>
+                <button onclick="closeModal()" class="bg-gray-200 text-app-text font-dm-sans py-2 px-4 rounded-lg hover:bg-gray-300">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        // --- Firebase Setup (Mandatory for Web Apps) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, setDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Firebase variables
+        let app;
+        let db;
+        let auth;
+        let userId = 'anonymous';
+
+        // Essential globals provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        setLogLevel('debug'); // Enable Firestore logging
+
+        /**
+         * Initializes Firebase and authenticates the user.
+         */
+        async function initializeFirebase() {
+            if (!firebaseConfig) {
+                console.error("Firebase configuration is missing.");
+                return;
+            }
+
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Sign in using custom token or anonymously
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log(`User authenticated. UID: ${userId}`);
+                    } else {
+                        userId = crypto.randomUUID(); // Use random ID for unauthenticated state
+                        console.log(`User is not signed in. Using temp ID: ${userId}`);
+                    }
+                });
+
+            } catch (error) {
+                console.error("Firebase initialization or authentication failed:", error);
+                document.getElementById('error-message').textContent = 'Authentication failed. Please check console.';
+                document.getElementById('error-message').classList.remove('hidden');
+            }
+        }
+
+        // Initialize Firebase on script load
+        initializeFirebase();
+
+        // --- Core Application Logic ---
+
+        const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent';
+        const API_KEY = ""; // Canvas will inject the key
+
+        const inputSection = document.getElementById('input-section');
+        const loadingSection = document.getElementById('loading-section');
+        const outputSection = document.getElementById('output-section');
+        const runAssessmentButton = document.getElementById('runAssessmentButton');
+        const errorMessage = document.getElementById('error-message');
+
+        /**
+         * Simulates exponential backoff for API calls.
+         * @param {number} attempt The current attempt number (starts at 1).
+         * @returns {number} The delay in milliseconds.
+         */
+        const getDelay = (attempt) => Math.pow(2, attempt) * 1000 + Math.random() * 1000;
+
+        /**
+         * Stores the assessment results in Firestore.
+         * @param {object} results The JSON assessment object.
+         */
+        async function saveResults(results) {
+            if (!db || !userId) {
+                console.warn("Firestore not initialized or userId not available. Skipping save.");
+                return;
+            }
+
+            const docPath = `/artifacts/${appId}/users/${userId}/assessments/${Date.now()}`;
+            try {
+                await setDoc(doc(db, docPath), {
+                    timestamp: new Date(),
+                    goal: document.getElementById('digitalGoal').value,
+                    input_summary: document.getElementById('careerInput').value,
+                    results: JSON.stringify(results), // Store as string to handle Firestore array limitations cleanly
+                    userId: userId,
+                    appId: appId
+                });
+                console.log("Assessment saved successfully to Firestore.");
+            } catch (e) {
+                console.error("Error adding document: ", e);
+            }
+        }
+
+        /**
+         * Main function to trigger the AI assessment.
+         */
+        async function runAssessment() {
+            const digitalGoal = document.getElementById('digitalGoal').value.trim();
+            const careerInput = document.getElementById('careerInput').value.trim();
+
+            if (digitalGoal.length < 10 || careerInput.length < 50) {
+                errorMessage.textContent = 'Let’s get real. You need a specific goal and a detailed history (min 50 chars). No excuses.';
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            errorMessage.classList.add('hidden');
+            inputSection.classList.add('hidden');
+            loadingSection.classList.remove('hidden');
+            outputSection.classList.add('hidden');
+
+            const systemPrompt = `
+                You are the 'Digital Navigator' AI for 'DigitallyDefined.' Your audience is Gen X women (age 45-60) who are ready to monetize their expertise and build a lasting legacy (digital real estate).
+                Your tone is **Pragmatic, Direct, Action-Oriented, and High-Energy.** Use phrases like 'Let’s get real,' 'No more excuses,' and 'Own your power.'
+                Focus on leverage, automation, positioning, and avoiding burnout. Your advice must be brutally honest and focused on immediate, actionable steps for monetization.
+
+                The user provided their career background and a specific digital goal. Your task is to analyze this and return a single, structured JSON object that completely adheres to the provided schema. Do not include any text outside the JSON block.
+
+                The JSON schema you MUST follow is:
+                {
+                    "skillGaps": [
+                        {"skill": "string (The digital skill they absolutely need)", "why": "string (Why this skill is mandatory for their goal, focused on leverage/automation)"}
+                    ],
+                    "resourceRecommendations": [
+                        {"type": "string (e.g., Course, Community, Tool)", "title": "string (Actionable title)", "link_or_community": "string (Placeholder link or community name, e.g., 'digitallydefined.com/masterclass')"}
+                    ],
+                    "strengthOpportunities": [
+                        {"strength": "string (Existing career asset or skill they have)", "leverage": "string (How to convert this into a digital/monetizable asset for their goal)"}
+                    ],
+                    "actionPlan": [
+                        {"step": "number (Step order)", "action": "string (The concrete action to take, delivered with Digital Navigator tone)", "priority": "string (e.g., Immediate, Daily, Weekly)"}
+                    ]
+                }
+            `;
+
+            const userQuery = `
+                --- User Input ---
+                Digital Goal: ${digitalGoal}
+                Career & Digital History: ${careerInput}
+                --- End User Input ---
+                Analyze this and provide the complete JSON response based on the system instructions and schema.
+            `;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            skillGaps: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        skill: { type: "STRING" },
+                                        why: { type: "STRING" }
+                                    }
+                                }
+                            },
+                            resourceRecommendations: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        type: { type: "STRING" },
+                                        title: { type: "STRING" },
+                                        link_or_community: { type: "STRING" }
+                                    }
+                                }
+                            },
+                            strengthOpportunities: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        strength: { type: "STRING" },
+                                        leverage: { type: "STRING" }
+                                    }
+                                }
+                            },
+                            actionPlan: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        step: { type: "NUMBER" },
+                                        action: { type: "STRING" },
+                                        priority: { type: "STRING" }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            for (let attempt = 1; attempt <= 3; attempt++) {
+                try {
+                    const response = await fetch(`${API_URL}?key=${API_KEY}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                    if (!jsonText) {
+                         throw new Error("AI returned empty or invalid content.");
+                    }
+
+                    const parsedResults = JSON.parse(jsonText);
+                    displayResults(parsedResults);
+                    saveResults(parsedResults);
+                    loadingSection.classList.add('hidden');
+                    outputSection.classList.remove('hidden');
+                    return;
+
+                } catch (error) {
+                    console.error(`Attempt ${attempt} failed:`, error);
+                    if (attempt === 3) {
+                        loadingSection.classList.add('hidden');
+                        inputSection.classList.remove('hidden');
+                        errorMessage.textContent = 'AI is playing hard to get. Try again or check your input for details.';
+                        errorMessage.classList.remove('hidden');
+                        return;
+                    }
+                    await new Promise(resolve => setTimeout(resolve, getDelay(attempt)));
+                }
+            }
+        }
+
+        /**
+         * Renders the structured JSON results to the HTML.
+         * @param {object} data The parsed JSON assessment object.
+         */
+        function displayResults(data) {
+            const { skillGaps, resourceRecommendations, strengthOpportunities, actionPlan } = data;
+
+            // 1. Skill Gaps
+            const renderSkillGaps = skillGaps.map(item => `
+                <li class="bg-gray-50 p-3 rounded-lg border-l-4 border-accent-red">
+                    <strong class="text-accent-red font-bold">${item.skill.toUpperCase()}</strong>
+                    <p class="text-sm mt-1">${item.why}</p>
+                </li>
+            `).join('');
+            document.getElementById('skillGapsList').innerHTML = renderSkillGaps;
+
+            // 2. Strength-Based Opportunities
+            const renderOpportunities = strengthOpportunities.map(item => `
+                <li class="p-3 border-b border-gray-100">
+                    <strong class="text-dd-orange font-bold">${item.strength}</strong>
+                    <p class="text-sm mt-1">**LEVERAGE NOW:** ${item.leverage}</p>
+                </li>
+            `).join('');
+            document.getElementById('strengthOpportunitiesList').innerHTML = renderOpportunities;
+
+            // 3. Tailored Resource Recommendations
+            const renderResources = resourceRecommendations.map(item => `
+                <li class="bg-dd-blue/10 p-4 rounded-lg">
+                    <strong class="text-dd-blue font-bold">${item.title}</strong>
+                    <p class="text-xs uppercase mt-1">${item.type}</p>
+                    <p class="text-sm mt-1 break-words">Link/Community: <a href="#" class="text-dd-blue hover:underline">${item.link_or_community}</a></p>
+                </li>
+            `).join('');
+            document.getElementById('resourceRecommendationsList').innerHTML = renderResources;
+
+            // 4. Customized Action Plans
+            const renderActionPlan = actionPlan.map(item => `
+                <li class="text-app-text">
+                    <strong class="font-inter-bold block mb-1">STEP ${item.step}: ${item.action}</strong>
+                    <span class="text-xs bg-dd-orange/20 text-dd-orange px-2 py-0.5 rounded-full">${item.priority.toUpperCase()} PRIORITY</span>
+                </li>
+            `).join('');
+            document.getElementById('actionPlanList').innerHTML = renderActionPlan;
+
+            // Store results globally for export
+            window.assessmentResults = data;
+        }
+
+        // --- Export & Modal Functions ---
+
+        /**
+         * Creates a readable text summary of the results and displays the modal.
+         */
+        function exportResults() {
+            if (!window.assessmentResults) {
+                return;
+            }
+
+            const data = window.assessmentResults;
+            const goal = document.getElementById('digitalGoal').value;
+            const history = document.getElementById('careerInput').value;
+
+            let exportText = `DIGITALLYDEFINED SUPERPOWER ASSESSMENT BLUEPRINT\n\n`;
+            exportText += `--- User Input ---\n`;
+            exportText += `Goal: ${goal}\n`;
+            exportText += `History Summary: ${history.substring(0, 150)}...\n\n`;
+            exportText += `==========================================\n\n`;
+
+            exportText += `1. PERSONALIZED SKILL GAPS (THE HONEST TRUTH)\n`;
+            data.skillGaps.forEach(item => {
+                exportText += `\n- SKILL: ${item.skill.toUpperCase()}\n`;
+                exportText += `  WHY: ${item.why}\n`;
+            });
+            exportText += `\n==========================================\n\n`;
+
+            exportText += `2. STRENGTH-BASED OPPORTUNITIES (MAXIMIZE LEVERAGE)\n`;
+            data.strengthOpportunities.forEach(item => {
+                exportText += `\n- STRENGTH: ${item.strength}\n`;
+                exportText += `  LEVERAGE NOW: ${item.leverage}\n`;
+            });
+            exportText += `\n==========================================\n\n`;
+
+            exportText += `3. TAILORED RESOURCE RECOMMENDATIONS (NO MORE BURNOUT!)\n`;
+            data.resourceRecommendations.forEach(item => {
+                exportText += `\n- TYPE: ${item.type}\n`;
+                exportText += `  TITLE: ${item.title}\n`;
+                exportText += `  LINK/COMMUNITY: ${item.link_or_community}\n`;
+            });
+            exportText += `\n==========================================\n\n`;
+
+            exportText += `4. CUSTOMIZED ACTION PLAN (INCREMENTAL STEPS)\n`;
+            data.actionPlan.forEach(item => {
+                exportText += `\nSTEP ${item.step} [${item.priority.toUpperCase()}]: ${item.action}\n`;
+            });
+            exportText += `\n\n--- Own your power. No excuses. ---\n`;
+
+            document.getElementById('export-text-area').value = exportText;
+            document.getElementById('export-modal').classList.add('flex');
+            document.getElementById('export-modal').classList.remove('hidden');
+        }
+
+        /**
+         * Closes the export modal.
+         */
+        function closeModal() {
+            document.getElementById('export-modal').classList.remove('flex');
+            document.getElementById('export-modal').classList.add('hidden');
+        }
+
+        /**
+         * Copies text to clipboard and then closes the modal.
+         */
+        function copyToClipboardAndCloseModal() {
+            const textarea = document.getElementById('export-text-area');
+            textarea.select();
+            textarea.setSelectionRange(0, 99999); // For mobile devices
+            document.execCommand('copy');
+            closeModal();
+        }
+
+        // Set up global access for the initial button click
+        window.runAssessment = runAssessment;
+        window.exportResults = exportResults;
+        window.closeModal = closeModal;
+        window.copyToClipboardAndCloseModal = copyToClipboardAndCloseModal;
+
+    </script>
+</body>
+</html>

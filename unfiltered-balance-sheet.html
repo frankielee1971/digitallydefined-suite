@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digitally Defined: The Unfiltered Balance Sheet</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load DM Sans (Body) - We will use DM Sans bold for all headlines now -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Styles based on Brand Guide */
+        :root {
+            --dd-orange: #F18B25;
+            --dd-blue: #47B7D4;
+            --dd-red: #C20F0A;
+            --dd-bg: #FFFCF9;
+            --dd-text: #2D3748;
+        }
+
+        body {
+            /* Now using DM Sans for everything */
+            font-family: 'DM Sans', Inter, sans-serif; 
+            background-color: var(--dd-bg);
+            color: var(--dd-text);
+        }
+
+        /* --- CLEAN NAVIGATION STYLES --- */
+        .nav-button {
+            /* Base styles: Inactive is gray text */
+            padding: 0.75rem 1.5rem;
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 700;
+            color: #6B7280; /* Gray-500 equivalent */
+            transition: all 0.2s ease-in-out;
+            border-bottom: 3px solid transparent; /* Base for the underline */
+            cursor: pointer;
+            outline: none;
+            background: none; /* Ensure no default button background */
+            flex-shrink: 0; /* Prevent shrinking on small screens */
+        }
+
+        .nav-button:hover {
+            color: var(--dd-text); /* Darken text on hover */
+        }
+        
+        /* Active state: Dark text, orange underline, and overlap fix */
+        .tab-active {
+            color: var(--dd-text); 
+            border-bottom-color: var(--dd-orange);
+            margin-bottom: -1px; /* Visual fix to overlap the container's bottom border */
+        }
+        /* --- END NAVIGATION STYLES --- */
+
+        /* Responsive Layout Grid for Calculators */
+        .calculator-grid {
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: 1fr;
+        }
+        @media (min-width: 768px) {
+            .calculator-grid {
+                grid-template-columns: 1fr 1fr; /* Two columns on desktop */
+            }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <div class="max-w-4xl mx-auto">
+        <!-- Header & Mantras (UPDATED TITLE AND FONT STYLES) -->
+        <header class="text-center mb-10">
+            <!-- Main Brand Title: DM Sans, BOLD, Orange -->
+            <h1 class="text-5xl md:text-6xl text-[var(--dd-orange)] uppercase mb-0 leading-none font-extrabold tracking-tight">
+                DIGITALLY DEFINED
+            </h1>
+            <!-- Sub-Title: DM Sans, BOLD, Dark Text -->
+            <p class="text-2xl md:text-3xl text-[var(--dd-text)] font-extrabold mt-1 mb-2">
+                The Unfiltered Balance Sheet
+            </p>
+            <p class="mt-4 text-[var(--dd-text)] font-semibold text-lg italic">
+                “Let’s get real. No more excuses. Own your power.”
+            </p>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="flex flex-wrap justify-center border-b border-gray-300 mb-8 bg-white rounded-t-xl shadow-md">
+            <button data-page="divorce" class="nav-button">
+                Divorce Impact
+            </button>
+            <button data-page="caregiving" class="nav-button">
+                Caregiving Costs
+            </button>
+            <button data-page="reentry" class="nav-button">
+                Career Re-entry
+            </button>
+            <button data-page="dependency" class="nav-button">
+                Spousal Dependency
+            </button>
+        </nav>
+
+        <!-- Dynamic Content Area -->
+        <main id="calculator-container" class="p-6 bg-white rounded-b-xl shadow-2xl border-t-0">
+            <!-- Content will be injected here -->
+        </main>
+    </div>
+
+    <script>
+        // --- Core Application Logic ---
+
+        const calculatorContainer = document.getElementById('calculator-container');
+        const navButtons = document.querySelectorAll('.nav-button');
+        let currentPage = 'divorce'; // Default page
+
+        // Helper function to format currency
+        const formatCurrency = (value) => {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 0
+            }).format(value);
+        };
+
+        // Custom Input Component HTML (for cleaner calculator forms)
+        const inputHtml = (id, label, type = 'number', placeholder = '', value = '', min = 0, step = 'any') => `
+            <div class="mb-4">
+                <label for="${id}" class="block text-sm font-medium text-[var(--dd-text)] mb-1">${label}</label>
+                <input type="${type}" id="${id}" value="${value}" min="${min}" step="${step}"
+                       placeholder="${placeholder}"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--dd-orange)] focus:border-[var(--dd-orange)] transition duration-150 shadow-sm"
+                       oninput="handleInput()">
+            </div>
+        `;
+        
+        // Custom Result Component HTML
+        const resultHtml = (title, id, initialValue = '---', color = 'var(--dd-orange)') => `
+            <div class="p-5 bg-gray-50 rounded-lg border-l-4 shadow-md" style="border-left-color: ${color};">
+                <p class="text-sm font-medium text-gray-500">${title}</p>
+                <p id="${id}" class="text-3xl font-bold mt-1" style="color: ${color}">${initialValue}</p>
+            </div>
+        `;
+
+        // --- Calculator Definitions (Logic Unchanged) ---
+
+        // 1. Divorce Impact Calculator
+        const divorceCalculator = {
+            title: "Divorce Impact: Recalibrate Your Power",
+            description: "Let's get real. Gray divorce is a financial tsunami. Calculate the net impact on your retirement assets after splitting the marital estate and losing spousal support/pension.",
+            inputs: `
+                ${inputHtml('divorce_marital_assets', 'Total Marital Retirement Assets (401k, etc.)', 'number', 'e.g., 500000', 500000, 0, 1000)}
+                ${inputHtml('divorce_split_ratio', 'Your Share of Assets (%)', 'number', 'e.g., 50', 50, 0, 1)}
+                ${inputHtml('divorce_spousal_income_loss', 'Annual Loss from Spousal Income/Pension', 'number', 'e.g., 30000', 30000, 0, 100)}
+                ${inputHtml('divorce_years_to_retirement', 'Years Until Your Retirement', 'number', 'e.g., 10', 10, 1, 1)}
+                ${inputHtml('divorce_annual_growth_rate', 'Expected Annual Growth Rate (%)', 'number', 'e.g., 7', 7, 0, 0.1)}
+            `,
+            calculate: () => {
+                const totalAssets = parseFloat(document.getElementById('divorce_marital_assets').value) || 0;
+                const splitRatio = (parseFloat(document.getElementById('divorce_split_ratio').value) || 0) / 100;
+                const incomeLoss = parseFloat(document.getElementById('divorce_spousal_income_loss').value) || 0;
+                const years = parseFloat(document.getElementById('divorce_years_to_retirement').value) || 1;
+                const rate = (parseFloat(document.getElementById('divorce_annual_growth_rate').value) || 0) / 100;
+
+                // 1. Your Initial Retirement Share
+                const initialShare = totalAssets * splitRatio;
+
+                // 2. Projected Future Value of Your Share (FV = P * (1 + r)^n)
+                const futureValueShare = initialShare * Math.pow(1 + rate, years);
+
+                // 3. Projected Future Value of Lost Income Stream (as a rough lump sum estimate)
+                // This assumes lost income is replaced by an investment that grows at 'rate' for 'years'.
+                // A simplified estimate for the *magnitude* of the loss.
+                const lostIncomeFutureValue = incomeLoss * ((Math.pow(1 + rate, years) - 1) / rate);
+
+                const netFutureImpact = futureValueShare - lostIncomeFutureValue;
+                const annualIncomeGap = incomeLoss * 12; // Just the annual income loss
+
+                document.getElementById('divorce_result_future_share').textContent = formatCurrency(futureValueShare);
+                document.getElementById('divorce_result_lost_income_fv').textContent = formatCurrency(lostIncomeFutureValue);
+                document.getElementById('divorce_result_net_impact').textContent = formatCurrency(netFutureImpact);
+                document.getElementById('divorce_result_annual_gap').textContent = formatCurrency(annualIncomeGap);
+            },
+            results: `
+                ${resultHtml('Projected Future Value of Your Share', 'divorce_result_future_share', '---', 'var(--dd-orange)')}
+                ${resultHtml('Estimated Future Value of LOST Income Stream', 'divorce_result_lost_income_fv', '---', 'var(--dd-red)')}
+                ${resultHtml('Net Estimated Retirement Impact (Goal)', 'divorce_result_net_impact', '---', 'var(--dd-blue)')}
+                ${resultHtml('Annual Income Gap to Re-cover', 'divorce_result_annual_gap', '---', 'var(--dd-text)')}
+            `
+        };
+
+        // 2. Caregiving Cost Calculator
+        const caregivingCalculator = {
+            title: "Caregiving Cost: Quantify the Sacrifice",
+            description: "We're the sandwich generation. Quantify the financial impact of stepping back from work or paying for care while juggling responsibilities. Time to budget for the burnout.",
+            inputs: `
+                ${inputHtml('care_monthly_out_of_pocket', 'Monthly Out-of-Pocket Care Expenses', 'number', 'e.g., 1500', 1500, 0, 1)}
+                ${inputHtml('care_annual_salary', 'Your Annual Salary if Fully Employed', 'number', 'e.g., 85000', 85000, 0, 100)}
+                ${inputHtml('care_time_off_years', 'Years of Reduced/No Employment (Caregiving Break)', 'number', 'e.g., 3', 3, 0.5, 0.5)}
+                ${inputHtml('care_lost_contributions', 'Annual Retirement Contributions Lost', 'number', 'e.g., 10000', 10000, 0, 100)}
+            `,
+            calculate: () => {
+                const monthlyOOP = parseFloat(document.getElementById('care_monthly_out_of_pocket').value) || 0;
+                const annualSalary = parseFloat(document.getElementById('care_annual_salary').value) || 0;
+                const yearsOff = parseFloat(document.getElementById('care_time_off_years').value) || 0;
+                const lostContributions = parseFloat(document.getElementById('care_lost_contributions').value) || 0;
+
+                const directExpenses = monthlyOOP * 12 * yearsOff;
+                const lostIncome = annualSalary * yearsOff;
+                const lostSavings = lostContributions * yearsOff;
+                const totalFinancialHit = directExpenses + lostIncome + lostSavings;
+
+                document.getElementById('care_result_direct_expense').textContent = formatCurrency(directExpenses);
+                document.getElementById('care_result_lost_income').textContent = formatCurrency(lostIncome);
+                document.getElementById('care_result_lost_savings').textContent = formatCurrency(lostSavings);
+                document.getElementById('care_result_total_hit').textContent = formatCurrency(totalFinancialHit);
+            },
+            results: `
+                ${resultHtml('Total Direct Expenses (OOP)', 'care_result_direct_expense', '---', 'var(--dd-red)')}
+                ${resultHtml('Total Lost Income', 'care_result_lost_income', '---', 'var(--dd-red)')}
+                ${resultHtml('Total Lost Retirement Savings', 'care_result_lost_savings', '---', 'var(--dd-red)')}
+                ${resultHtml('THE TOTAL FINANCIAL HIT (No Excuses)', 'care_result_total_hit', '---', 'var(--dd-orange)')}
+            `
+        };
+
+        // 3. Career Re-entry Planning Tool
+        const reentryCalculator = {
+            title: "Career Re-entry: Time to Catch Up",
+            description: "Break is over. Your income is your digital superpower. Figure out the salary and extra savings required to make up for lost time and contributions.",
+            inputs: `
+                ${inputHtml('reentry_lost_years', 'Years of Career Break', 'number', 'e.g., 5', 5, 1, 1)}
+                ${inputHtml('reentry_lost_annual_savings', 'Avg Annual Retirement Savings Lost', 'number', 'e.g., 15000', 15000, 0, 100)}
+                ${inputHtml('reentry_investment_rate', 'Expected Annual Investment Growth Rate (%)', 'number', 'e.g., 7', 7, 0, 0.1)}
+                ${inputHtml('reentry_years_to_catchup', 'Years Available to Catch Up Before Retirement', 'number', 'e.g., 15', 15, 1, 1)}
+            `,
+            calculate: () => {
+                const lostYears = parseFloat(document.getElementById('reentry_lost_years').value) || 0;
+                const lostSavings = parseFloat(document.getElementById('reentry_lost_annual_savings').value) || 0;
+                const rate = (parseFloat(document.getElementById('reentry_investment_rate').value) || 0) / 100;
+                const catchupYears = parseFloat(document.getElementById('reentry_years_to_catchup').value) || 1;
+
+                // Calculate the future value of the lost savings (The "Catch-Up" Target)
+                // FV of a series of payments (lost savings) compounded over (lostYears + catchupYears)
+                const totalLossFV = lostSavings * ((Math.pow(1 + rate, lostYears) - 1) / rate) * Math.pow(1 + rate, catchupYears);
+
+                // Calculate the extra annual contribution needed (Payment for an Annuity)
+                const requiredAnnualContribution = totalLossFV / ((Math.pow(1 + rate, catchupYears) - 1) / rate);
+
+                document.getElementById('reentry_result_target').textContent = formatCurrency(totalLossFV);
+                document.getElementById('reentry_result_annual_contribution').textContent = formatCurrency(requiredAnnualContribution);
+                document.getElementById('reentry_result_monthly_contribution').textContent = formatCurrency(requiredAnnualContribution / 12);
+
+                const requiredSalaryLift = requiredAnnualContribution * 1.5; // Estimate salary needed for post-tax savings
+                document.getElementById('reentry_result_salary_lift').textContent = formatCurrency(requiredSalaryLift);
+            },
+            results: `
+                ${resultHtml('THE CATCH-UP TARGET (Future Value of Lost Savings)', 'reentry_result_target', '---', 'var(--dd-orange)')}
+                ${resultHtml('REQUIRED EXTRA Annual Contribution', 'reentry_result_annual_contribution', '---', 'var(--dd-blue)')}
+                ${resultHtml('REQUIRED EXTRA Monthly Contribution', 'reentry_result_monthly_contribution', '---', 'var(--dd-blue)')}
+                ${resultHtml('Approx. Salary Increase Needed to Fund This', 'reentry_result_salary_lift', '---', 'var(--dd-text)')}
+            `
+        };
+
+        // 4. Spousal Dependency Risk Assessment
+        const dependencyCalculator = {
+            title: "Spousal Dependency: Risk & Leverage",
+            description: "Stop relying solely on a partner's plan. Evaluate your financial vulnerability and identify where you need to build your own leverage. Let's look at the hard truth.",
+            inputs: `
+                ${inputHtml('dependency_your_assets', 'Your Personal Retirement Assets', 'number', 'e.g., 50000', 50000, 0, 1000)}
+                ${inputHtml('dependency_spousal_assets', 'Spouse’s Personal Retirement Assets', 'number', 'e.g., 500000', 500000, 0, 1000)}
+                ${inputHtml('dependency_annual_need', 'Your Estimated Annual Retirement Income Need', 'number', 'e.g., 70000', 70000, 1, 1)}
+                ${inputHtml('dependency_spouse_health_score', 'Spouse’s Health/Job Stability (1=Poor, 10=Excellent)', 'number', 'e.g., 5', 5, 1, 1)}
+            `,
+            calculate: () => {
+                const yourAssets = parseFloat(document.getElementById('dependency_your_assets').value) || 0;
+                const spousalAssets = parseFloat(document.getElementById('dependency_spousal_assets').value) || 0;
+                const annualNeed = parseFloat(document.getElementById('dependency_annual_need').value) || 0;
+                const stabilityScore = parseFloat(document.getElementById('dependency_spouse_health_score').value) || 0;
+
+                const totalAssets = yourAssets + spousalAssets;
+                let dependencyPercent = 0;
+                if (totalAssets > 0) {
+                    // This is a simplified metric: Dependency on Spousal Assets for 50% of Total Assets
+                    dependencyPercent = (spousalAssets / totalAssets) * 100;
+                }
+                
+                // Calculate a simple risk score (higher is worse)
+                // Risk = Dependency % * (11 - Stability Score) / 10
+                const rawRisk = (dependencyPercent / 100) * (11 - stabilityScore) / 10;
+                let riskText = "";
+                let riskColor = "";
+
+                if (rawRisk < 0.1) {
+                    riskText = "Low Risk: You own your power. Keep building!";
+                    riskColor = "var(--dd-blue)";
+                } else if (rawRisk < 0.3) {
+                    riskText = "Moderate Risk: Assess gaps. Time for a digital asset side hustle.";
+                    riskColor = "var(--dd-orange)";
+                } else {
+                    riskText = "HIGH RISK: Wake-up call! Immediate action required. No more excuses.";
+                    riskColor = "var(--dd-red)";
+                }
+
+                document.getElementById('dependency_result_percent').textContent = `${dependencyPercent.toFixed(1)}%`;
+                document.getElementById('dependency_result_total').textContent = formatCurrency(totalAssets);
+                document.getElementById('dependency_result_risk_score').textContent = riskText;
+                document.getElementById('dependency_result_risk_score').style.color = riskColor;
+                document.getElementById('dependency_result_risk_score_card').style.borderColor = riskColor;
+            },
+            results: `
+                ${resultHtml('Total Combined Retirement Assets', 'dependency_result_total', '---', 'var(--dd-text)')}
+                ${resultHtml('Dependency on Spouse’s Assets (%)', 'dependency_result_percent', '---', 'var(--dd-orange)')}
+                <div id="dependency_result_risk_score_card" class="p-5 bg-white rounded-lg border-l-4 shadow-2xl transition duration-300" style="border-left-color: var(--dd-red);">
+                    <p class="text-sm font-medium text-gray-500">Vulnerability Risk Assessment</p>
+                    <p id="dependency_result_risk_score" class="text-xl font-bold mt-1 text-[var(--dd-red)]">---</p>
+                </div>
+                ${resultHtml('Annual Income Need (For Context)', 'dependency_result_annual_need', '---', 'var(--dd-blue)')}
+            `
+        };
+
+
+        // Function to render the active calculator
+        const renderCalculator = (page) => {
+            const calculators = {
+                divorce: divorceCalculator,
+                caregiving: caregivingCalculator,
+                reentry: reentryCalculator,
+                dependency: dependencyCalculator
+            };
+
+            const calculator = calculators[page];
+            if (!calculator) return;
+
+            calculatorContainer.innerHTML = `
+                <!-- Calculator Title: Now using standard DM Sans, but BOLD -->
+                <h2 class="text-3xl text-[var(--dd-text)] mb-2 font-extrabold">${calculator.title}</h2>
+                <p class="text-gray-600 mb-6 font-semibold">${calculator.description}</p>
+
+                <div class="calculator-grid mb-8">
+                    <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-inner">
+                        <!-- Input Heading: Now using standard DM Sans, but BOLDER -->
+                        <h3 class="font-extrabold text-xl mb-4 text-[var(--dd-text)]">Your Inputs</h3>
+                        <form id="${page}-form" onsubmit="event.preventDefault()">${calculator.inputs}</form>
+                        <button onclick="handleInput()" class="w-full py-3 mt-4 text-lg font-bold rounded-xl shadow-lg transition duration-200
+                                       bg-[var(--dd-orange)] text-white hover:bg-[var(--dd-blue)] hover:shadow-xl">
+                            CALCULATE: Own Your Power
+                        </button>
+                    </div>
+
+                    <div class="p-4 bg-white rounded-lg border border-gray-200 shadow-md">
+                        <!-- Output Heading: Now using standard DM Sans, but BOLDER -->
+                        <h3 class="font-extrabold text-xl mb-4 text-[var(--dd-text)]">The Output</h3>
+                        <div class="space-y-4">
+                            ${calculator.results}
+                        </div>
+                    </div>
+                </div>
+            `;
+            currentPage = page;
+            calculator.calculate(); // Calculate initial values
+        };
+
+        // Function called on input change and button click
+        window.handleInput = () => {
+            const calculators = {
+                divorce: divorceCalculator,
+                caregiving: caregivingCalculator,
+                reentry: reentryCalculator,
+                dependency: dependencyCalculator
+            };
+            // Run the calculation for the current page
+            calculators[currentPage].calculate();
+        };
+
+        // --- Event Listeners and Initialization ---
+
+        navButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetPage = button.getAttribute('data-page');
+
+                // 1. Remove active class from all buttons
+                navButtons.forEach(btn => {
+                    btn.classList.remove('tab-active');
+                });
+
+                // 2. Apply active class to clicked button
+                button.classList.add('tab-active');
+
+                // 3. Render the new page
+                renderCalculator(targetPage);
+            });
+        });
+
+        // Initialize the first calculator on load
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCalculator(currentPage);
+            // Apply the active class to the default button
+            const defaultButton = document.querySelector(`.nav-button[data-page="${currentPage}"]`);
+            if (defaultButton) {
+                defaultButton.classList.add('tab-active');
+            }
+        });
+
+    </script>
+</body>
+</html>

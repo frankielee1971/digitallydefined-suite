@@ -1,0 +1,778 @@
+!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Power Play Dashboard - Gen X Wealth</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* DD Colors */
+        :root {
+            --dd-orange: #F18B25;
+            --dd-blue: #47B7D4;
+            --dd-red: #C20F0A;
+            --dd-bg: #FFFCF9;
+            --dd-text: #2D3748;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--dd-bg);
+            color: var(--dd-text);
+        }
+
+        /* Styling for Inter Bold */
+        .font-extrabold {
+            font-weight: 900;
+        }
+
+        /* Custom scrollbar to match brand */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--dd-orange);
+            border-radius: 4px;
+        }
+
+        /* General Card styles */
+        .tool-card {
+            border-top: 4px solid var(--dd-orange);
+            box-shadow: 0 20px 25px -5px rgba(241, 139, 37, 0.2), 0 10px 10px -5px rgba(241, 139, 37, 0.1);
+            min-height: 500px;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'dd-orange': 'var(--dd-orange)',
+                        'dd-blue': 'var(--dd-blue)',
+                        'dd-red': 'var(--dd-red)',
+                        'dd-bg': 'var(--dd-bg)',
+                        'dd-text': 'var(--dd-text)',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen">
+    <header class="bg-white shadow-lg sticky top-0 z-10" style="border-bottom: 4px solid var(--dd-orange);">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row md:justify-between md:items-center">
+            <h1 class="text-4xl font-extrabold tracking-tight flex items-center mb-4 md:mb-0" style="color: var(--dd-text);">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 mr-2 transform rotate-12" style="color: var(--dd-orange);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                Digital Power<span class="ml-1" style="color: var(--dd-blue);">Play</span>
+            </h1>
+        </div>
+
+        <!-- Navigation Bar -->
+        <nav class="border-t border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between space-x-2 sm:space-x-4" id="tab-navigation">
+                    <!-- Active tabs now clearly reflect state change -->
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <!-- Guidance Section -->
+        <div id="guidance-section"></div>
+
+        <!-- Main Tool Content -->
+        <div id="tool-content">
+            <!-- Active tool content will be loaded here -->
+        </div>
+    </main>
+
+    <script>
+        // --- Core Brand Constants ---
+        const DD_ORANGE = '#F18B25';
+        const DD_BLUE = '#47B7D4';
+        const DD_RED = '#C20F0A';
+        const DD_TEXT = '#2D3748';
+
+        // --- State Management (Simple Global Variables) ---
+        let activeTab = 'income';
+
+        // Risk Profiler State
+        let riskCurrentQuestion = 0;
+        let riskAnswers = [null, null, null];
+        let riskScore = null;
+
+        // Income Calculator State (Using strings for better input control)
+        let desiredIncome = '80000';
+        let currentSavings = '250000';
+        let safeWithdrawalRate = '4';
+        let actionPlan = null;
+        let isLoading = false;
+        let apiError = null;
+
+        // Time Optimizer State
+        let currentAge = '48';
+        let retireAge = '65';
+        let lifespan = '90';
+
+        // --- Utility Functions ---
+
+        /** Formats a number as US currency ($100,000) */
+        const formatCurrency = (num) => {
+            if (typeof num !== 'number' || isNaN(num) || num < 0) return '$0';
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+            }).format(num);
+        };
+
+        /** Parses a string input value into a number, defaulting to 0 if invalid. */
+        const parseNumber = (value) => {
+            return parseFloat(value) || 0;
+        };
+
+        // --- API INTEGRATION (Exponential Backoff) ---
+
+        const handleFetchWithRetry = async (url, payload, maxRetries = 5) => {
+            const fetcher = async (attempt) => {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    return await response.json();
+                } catch (e) {
+                    if (attempt < maxRetries) {
+                        const delay = Math.pow(2, attempt) * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        return fetcher(attempt + 1);
+                    } else {
+                        throw new Error("API call failed after multiple retries.");
+                    }
+                }
+            };
+            return fetcher(1);
+        };
+
+        // --- Rendering Helpers ---
+
+        const getIconSvg = (name, color = DD_BLUE) => {
+            const icons = {
+                risk: '<svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16.5" y1="12" x2="7.5" y2="12"></line><line x1="12" y1="16.5" x2="12" y2="7.5"></line><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path></svg>', // Scale-like
+                time: '<svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>', // Clock
+                income: '<svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.74 1.74"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>', // TrendingUp-like
+                zap: '<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>'
+            };
+            let svg = icons[name] || '';
+            return svg.replace('stroke="currentColor"', `stroke="${DD_TEXT}" style="color: ${color}"`);
+        };
+        
+        const StyledBold = (text) => `<span style="font-weight: 700; color: ${DD_ORANGE};">${text}</span>`;
+        
+        // --- Component Rendering Functions ---
+
+        const renderToolCard = (title, iconName, contentHtml) => {
+            return `
+                <div class="bg-white p-6 md:p-8 rounded-xl shadow-2xl tool-card flex flex-col">
+                    <h2 class="text-3xl font-extrabold mb-4 flex items-center" style="color: ${DD_TEXT};">
+                        ${getIconSvg(iconName, DD_BLUE)}
+                        ${title}
+                    </h2>
+                    <p class="text-sm font-semibold mb-6 uppercase tracking-wider border-b pb-3" style="color: ${DD_BLUE}; border-color: ${DD_BLUE}30;">
+                        OWN YOUR POWER. AUTOMATE YOUR WEALTH.
+                    </p>
+                    <div class="flex-grow">
+                        ${contentHtml}
+                    </div>
+                </div>
+            `;
+        };
+
+        const renderCustomInput = (id, label, value, unit, updateFunction, isFullWidth = false, placeholder = '') => {
+            return `
+                <div class="mb-4 ${isFullWidth ? 'col-span-full' : ''}">
+                    <label for="${id}" class="block text-sm font-medium" style="color: ${DD_TEXT};">
+                        ${label}
+                    </label>
+                    <div class="mt-1 relative rounded-md shadow-sm">
+                        ${unit ? `<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                            <span class="text-gray-500 sm:text-sm">${unit}</span>
+                        </div>` : ''}
+                        <input
+                            type="text"
+                            id="${id}"
+                            value="${value}"
+                            oninput="${updateFunction}(this.value)"
+                            placeholder="${placeholder}"
+                            inputmode="numeric"
+                            pattern="[0-9]*"
+                            class="block w-full rounded-lg border-gray-300 p-3 text-gray-900 sm:text-sm ${unit ? 'pl-10' : ''}"
+                            style="border-color: ${DD_TEXT}50; color: ${DD_TEXT};"
+                        />
+                    </div>
+                </div>
+            `;
+        };
+
+        // --- Tool 1: Risk Profiler Logic & Render ---
+
+        const riskQuestions = [
+            {
+                text: "If the stock market dropped 25% tomorrow, what would be your first thought?",
+                options: [
+                    { text: "Panic sell everything to lock in what's left.", score: 1 },
+                    { text: "Wait it out. I'll check back next quarter.", score: 3 },
+                    { text: "Time to buy! Everything is on sale.", score: 5 },
+                ]
+            },
+            {
+                text: "You're investing for retirement, which is 15+ years away. Which growth profile appeals most?",
+                options: [
+                    { text: "Slow, steady growth. I need maximum protection.", score: 2 },
+                    { text: "Moderate risk for moderate growth. I accept occasional dips.", score: 4 },
+                    { text: "Aggressive growth. I have plenty of time to recover from major losses.", score: 5 },
+                ]
+            },
+            {
+                text: "Which statement best describes your financial confidence when discussing investing?",
+                options: [
+                    { text: "I feel less confident than my peers/partner and prefer professional guidance.", score: 2 },
+                    { text: "I am confident in my decisions but still rely on research and data.", score: 4 },
+                    { text: "I trust my gut and enjoy making high-conviction trades.", score: 5 },
+                ]
+            },
+        ];
+
+        const handleRiskAnswer = (score) => {
+            riskAnswers[riskCurrentQuestion] = score;
+
+            if (riskCurrentQuestion < riskQuestions.length - 1) {
+                riskCurrentQuestion++;
+            } else {
+                calculateRisk();
+            }
+            renderTool('risk');
+        };
+
+        const calculateRisk = () => {
+            riskScore = riskAnswers.reduce((sum, score) => sum + score, 0);
+        };
+
+        const getRiskProfile = (score) => {
+            if (score === null) return { title: "", allocation: null, advice: null, adviceBorder: '' };
+
+            let profile = {};
+            if (score <= 5) {
+                profile = {
+                    title: "Ultra Conservative (Protection Mode)",
+                    color: "bg-red-100 text-red-800 border-red-500",
+                    allocation: { Stocks: '20%', Bonds: '60%', Cash: '20%' },
+                    advice: `This profile, often influenced by financial trauma, prioritizes stability. Your biggest risk right now is ${StyledBold('inflation')} eroding your spending power over 20+ years. We need to find a way to get comfortable with ${StyledBold('calculated')} growth.`,
+                    adviceBorder: 'border-red-400'
+                };
+            } else if (score <= 9) {
+                profile = {
+                    title: "Moderate (Balanced Growth)",
+                    color: "bg-yellow-100 text-yellow-800 border-yellow-500",
+                    allocation: { Stocks: '50%', Bonds: '40%', Cash: '10%' },
+                    advice: `You have a balanced approach, which is smart. But, as Gen X, we're in 'catch-up' mode. Re-evaluate if you can allocate 5-10% more toward growth assets to aggressively close that retirement savings gap.`,
+                    adviceBorder: 'border-yellow-400'
+                };
+            } else if (score <= 12) {
+                profile = {
+                    title: "Growth (Aggressive but Smart)",
+                    color: "bg-green-100 text-green-800 border-green-500",
+                    allocation: { Stocks: '75%', Bonds: '20%', Cash: '5%' },
+                    advice: `You're taking calculated risks. This allocation is suitable for a 10-15+ year horizon. Remember to balance this with high-priority debt reduction (like credit card debt) now, so your retirement years are debt-free.`,
+                    adviceBorder: 'border-green-400'
+                };
+            } else {
+                 profile = {
+                    title: "High Growth (Market-Driven)",
+                    color: "bg-blue-100 text-blue-800",
+                    allocation: { Stocks: '90%', Bonds: '5%', Cash: '5%' },
+                    advice: `You're clearly ready for growth! Ensure this level of risk is necessary. If you're close to your goal, pivoting slightly to protect those gains might be your next power move.`,
+                    adviceBorder: 'border-blue-400'
+                };
+            }
+            return profile;
+        };
+
+        const renderRiskProfiler = () => {
+            let contentHtml = '';
+            const profile = getRiskProfile(riskScore);
+            const q = riskQuestions[riskCurrentQuestion];
+
+            if (riskScore === null) {
+                // QUIZ VIEW
+                const optionsHtml = q.options.map((option, index) => `
+                    <button
+                        onclick="handleRiskAnswer(${option.score})"
+                        class="w-full text-left p-4 hover:bg-gray-100 border rounded-lg transition duration-150 flex items-start"
+                        style="background-color: ${DD_BLUE}10; border-color: ${DD_BLUE}30;"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mt-0.5 mr-2 flex-shrink-0" style="color: ${DD_BLUE}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        <span class="font-medium" style="color: ${DD_TEXT};">${option.text}</span>
+                    </button>
+                `).join('');
+
+                contentHtml = `
+                    <div class="space-y-6">
+                        <p class="text-lg font-medium" style="color: ${DD_TEXT};">
+                            Question ${riskCurrentQuestion + 1} of ${riskQuestions.length}:
+                        </p>
+                        <p class="text-2xl font-extrabold" style="color: ${DD_TEXT};">${q.text}</p>
+                        <div class="space-y-3">${optionsHtml}</div>
+                    </div>
+                `;
+            } else {
+                // RESULTS VIEW
+                const allocationHtml = Object.entries(profile.allocation).map(([key, value]) => `
+                    <div class="p-3 bg-gray-50 rounded-lg shadow-inner">
+                        <p class="text-2xl font-extrabold" style="color: ${DD_ORANGE};">${value}</p>
+                        <p class="text-sm font-medium" style="color: ${DD_TEXT};">${key}</p>
+                    </div>
+                `).join('');
+
+                contentHtml = `
+                    <div class="space-y-6">
+                        <h3 class="text-xl font-extrabold" style="color: ${DD_TEXT};">Your Risk Profile:</h3>
+                        <div class="p-4 rounded-xl border-2 ${profile.color}">
+                            <p class="text-2xl font-extrabold">${profile.title}</p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <h4 class="text-lg font-bold mt-4" style="color: ${DD_TEXT};">Calculated Asset Allocation Suggestion:</h4>
+                            <div class="grid grid-cols-3 gap-4 text-center">${allocationHtml}</div>
+                        </div>
+
+                        <h4 class="text-lg font-bold mt-6" style="color: ${DD_TEXT};">Bestie's Take:</h4>
+                        <p class="bg-gray-50 p-4 rounded-lg italic border-l-4 ${profile.adviceBorder}" style="color: ${DD_TEXT};">
+                            ${profile.advice}
+                        </p>
+
+                        <button
+                            onclick="riskScore = null; riskCurrentQuestion = 0; riskAnswers = [null, null, null]; renderTool('risk');"
+                            class="w-full mt-4 flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white transition duration-200"
+                            style="background-color: ${DD_RED};"
+                        >
+                            Retake Assessment
+                        </button>
+                    </div>
+                `;
+            }
+
+            document.getElementById('tool-content').innerHTML = renderToolCard("Risk Tolerance Profiler", "risk", contentHtml);
+        };
+
+        // --- Tool 2: Time Optimizer Logic & Render ---
+
+        const updateTimeInput = (field, value) => {
+            if (field === 'age') currentAge = value;
+            if (field === 'retireAge') retireAge = value;
+            if (field === 'lifespan') lifespan = value;
+            renderTool('time'); // Re-render immediately on input
+        };
+
+        const renderTimeOptimizer = () => {
+            const parsedAge = parseNumber(currentAge);
+            const parsedRetireAge = parseNumber(retireAge);
+            const parsedLifespan = parseNumber(lifespan);
+
+            const retirementDuration = Math.max(0, parsedLifespan - parsedRetireAge);
+            const yearsRemaining = Math.max(0, parsedRetireAge - parsedAge);
+
+            const getAdvice = (duration) => {
+                if (duration >= 30) {
+                    return {
+                        title: "Extended Longevity (30+ Years)",
+                        color: "bg-blue-100 text-blue-800",
+                        advice: `This is a ${StyledBold('marathon')}, not a sprint. You have three full decades of life after work. Your portfolio ${StyledBold('MUST')} maintain a growth component well into your 70s to combat sequence of returns risk and high inflation. Look into diversified income streams to fill the gaps.`,
+                    };
+                }
+                if (duration >= 25) {
+                    return {
+                        title: "Significant Horizon (25-29 Years)",
+                        color: "bg-green-100 text-green-800 border-green-500",
+                        advice: `25+ years is a lot of life! Start prioritizing debt reduction now so that when you hit 65, your fixed expenses are minimal. If you can delay Social Security, ${StyledBold('DO IT')}.`,
+                    };
+                }
+                return {
+                    title: "Standard Horizon (20-24 Years)",
+                    color: "bg-yellow-100 text-yellow-800 border-yellow-500",
+                    advice: `This is a solid plan, but Gen X women often outlive their estimates. Consider adding an extra 5 years of 'growth' runway to your planning to hedge against unexpected costs or a longer life.`,
+                };
+            };
+
+            const advice = getAdvice(retirementDuration);
+
+            const contentHtml = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    ${renderCustomInput('age', 'Current Age', currentAge, '', (v) => updateTimeInput('age', v), false, '48')}
+                    ${renderCustomInput('retireAge', 'Target Retirement Age', retireAge, '', (v) => updateTimeInput('retireAge', v), false, '65')}
+                    ${renderCustomInput('lifespan', 'Expected Lifespan (Real Talk)', lifespan, '', (v) => updateTimeInput('lifespan', v), false, '90')}
+                </div>
+
+                <button
+                    onclick="renderTool('time')"
+                    class="w-full mt-6 flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-bold text-white transition duration-200"
+                    style="background-color: ${DD_RED};"
+                >
+                    Calculate Longevity Strategy
+                </button>
+
+                <div class="mt-8 space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-5 rounded-xl shadow-lg border-l-4" style="background-color: ${DD_BLUE}10; border-color: ${DD_BLUE};">
+                            <p class="text-sm font-medium uppercase" style="color: ${DD_BLUE};">Years Until Retirement</p>
+                            <p class="text-4xl font-extrabold mt-1" style="color: ${DD_TEXT};">${yearsRemaining} <span class="text-xl">Years</span></p>
+                        </div>
+                        <div class="p-5 rounded-xl shadow-lg border-l-4" style="background-color: ${DD_BLUE}10; border-color: ${DD_BLUE};">
+                            <p class="text-sm font-medium uppercase" style="color: ${DD_BLUE};">Retirement Duration</p>
+                            <p class="text-4xl font-extrabold mt-1" style="color: ${DD_TEXT};">${retirementDuration} <span class="text-xl">Years</span></p>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-xl border-2 ${advice.color} mt-6">
+                        <h3 class="text-xl font-bold flex items-center mb-2" style="color: ${DD_TEXT};">
+                             ${getIconSvg('risk', DD_TEXT)} Your Strategy Profile: ${advice.title}
+                        </h3>
+                        <p class="italic border-l-4 border-gray-300 pl-3" style="color: ${DD_TEXT};">
+                            ${advice.advice}
+                        </p>
+                    </div>
+                </div>
+            `;
+            document.getElementById('tool-content').innerHTML = renderToolCard("Time-Horizon Optimizer", "time", contentHtml);
+        };
+
+        // --- Tool 3: Income Calculator Logic & Render ---
+
+        const updateIncomeInput = (field, value) => {
+            if (field === 'income') desiredIncome = value;
+            if (field === 'savings') currentSavings = value;
+            if (field === 'swr') safeWithdrawalRate = value;
+            
+            // Clear API response on input change
+            actionPlan = null;
+            apiError = null;
+            
+            renderTool('income'); // Re-render immediately on input
+        };
+
+        const generateActionPlan = async () => {
+            const requiredNestEgg = calculateRequiredNestEgg();
+            const savingsGap = Math.max(0, requiredNestEgg - parseNumber(currentSavings));
+            
+            if (savingsGap <= 0) {
+                apiError = 'Your gap is closed! No aggressive plan needed. Focus on tax strategy.';
+                renderTool('income');
+                return;
+            }
+
+            isLoading = true;
+            apiError = null;
+            actionPlan = null;
+            renderTool('income'); // Show loading state
+
+            const systemPrompt = "You are a direct, no-nonsense financial coach specializing in Gen X women's digital wealth creation. Your goal is to provide a highly actionable, 3-point plan to close a significant savings gap. Focus on high-impact areas like monetizing digital skills, optimizing automated savings, and aggressive portfolio catch-up contributions. The tone must be firm, empowering, and focused on automation and efficiency. Format your response as a numbered list.";
+            
+            const userQuery = `My current retirement savings are ${formatCurrency(parseNumber(currentSavings))} and my target nest egg is ${formatCurrency(requiredNestEgg)}, leaving a significant savings gap of ${formatCurrency(savingsGap)}. Generate an aggressive, 3-point action plan to close this gap in the next 10-15 years. Focus on high leverage strategies.`;
+            
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+            };
+
+            try {
+                const result = await handleFetchWithRetry(apiUrl, payload);
+                
+                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                if (text) {
+                    actionPlan = text;
+                } else {
+                    apiError = "Could not generate a plan. The network might be down.";
+                }
+
+            } catch (e) {
+                console.error("Gemini API Error:", e);
+                apiError = "Error connecting to the financial intelligence network.";
+            } finally {
+                isLoading = false;
+                renderTool('income'); // Re-render with results or error
+            }
+        };
+        
+        const calculateRequiredNestEgg = () => {
+            const parsedDesiredIncome = parseNumber(desiredIncome);
+            const parsedSafeWithdrawalRate = parseNumber(safeWithdrawalRate);
+            if (parsedDesiredIncome <= 0 || parsedSafeWithdrawalRate <= 0) return 0;
+            return parsedDesiredIncome / (parsedSafeWithdrawalRate / 100);
+        }
+
+        const renderIncomeCalculator = () => {
+            const parsedCurrentSavings = parseNumber(currentSavings);
+            const requiredNestEgg = calculateRequiredNestEgg();
+            const savingsGap = Math.max(0, requiredNestEgg - parsedCurrentSavings);
+
+            const formattedNestEgg = formatCurrency(requiredNestEgg);
+            const formattedCurrentSavings = formatCurrency(parsedCurrentSavings);
+            const formattedSavingsGap = formatCurrency(savingsGap);
+
+            const getIncomeAdvice = (gap) => {
+                if (gap === 0) {
+                    return {
+                        title: "Goal Achieved! (Income Secure)",
+                        color: "bg-green-100 text-green-800 border-green-500",
+                        advice: `You've crushed it, sis! You're on track to replace your income. Now, focus on ${StyledBold('tax diversification')} (Roth vs. Traditional) and ${StyledBold('long-term healthcare planning')}.`,
+                    };
+                }
+                if (gap < 500000) {
+                    return {
+                        title: "Small Gap (Catch-Up Mode)",
+                        color: "bg-yellow-100 text-yellow-800 border-yellow-500",
+                        advice: `The gap is manageable. Prioritize ${StyledBold('maxing out catch-up contributions')} (if age 50+) and automating your savings. Every extra dollar saved in your 50s works double-time!`,
+                    };
+                }
+                return {
+                    title: "Significant Gap (High-Impact Mode)",
+                    color: "bg-red-100 text-red-800 border-red-500",
+                    advice: `Don't panic! We have a real number now. The most effective moves are: 1. Aggressively pay down high-interest debt. 2. Consider a strategic side hustle to fund catch-up contributions. 3. Look at delaying retirement/Social Security by a few years.`,
+                };
+            };
+
+            const incomeAdvice = getIncomeAdvice(savingsGap);
+            
+            // Prepare action plan for display, replacing markdown bolding
+            const processedActionPlan = actionPlan ? actionPlan
+                .replace(/\*\*(.*?)\*\*/g, StyledBold('$1'))
+                .replace(/\*(.*?)\*/g, StyledBold('$1'))
+                .replace(/\n/g, '<br />')
+                : null;
+
+            const contentHtml = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    ${renderCustomInput('income', 'Desired Annual Retirement Income', desiredIncome, '$', (v) => updateIncomeInput('income', v), false, '80000')}
+                    ${renderCustomInput('savings', 'Current Retirement Savings Total', currentSavings, '$', (v) => updateIncomeInput('savings', v), false, '250000')}
+                    <div class="col-span-1 md:col-span-2">
+                        ${renderCustomInput('swr', 'Safe Annual Withdrawal Rate (%)', safeWithdrawalRate, '%', (v) => updateIncomeInput('swr', v), true, '4')}
+                        <p class="text-xs mt-1 italic" style="color: ${DD_TEXT}80;">
+                            The '4% Rule' is a common starting point, but consider lowering to 3.5% for extended lifespans.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-8 space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                        <div class="p-4 bg-gray-50 rounded-xl shadow-lg border-t-2" style="border-color: ${DD_ORANGE};">
+                            <p class="text-sm font-medium uppercase" style="color: ${DD_ORANGE};">Target Nest Egg</p>
+                            <p class="text-3xl font-extrabold mt-1" style="color: ${DD_TEXT};">${formattedNestEgg}</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-xl shadow-lg border-t-2" style="border-color: ${DD_ORANGE};">
+                            <p class="text-sm font-medium uppercase" style="color: ${DD_ORANGE};">Current Savings</p>
+                            <p class="text-3xl font-extrabold mt-1" style="color: ${DD_TEXT};">${formattedCurrentSavings}</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-xl shadow-lg border-t-2 border-red-500">
+                            <p class="text-sm font-medium uppercase text-red-500">Savings Gap to Close</p>
+                            <p class="text-3xl font-extrabold text-red-500 mt-1">${formattedSavingsGap}</p>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-xl border-2 ${incomeAdvice.color} mt-6">
+                        <h3 class="text-xl font-bold flex items-center mb-2" style="color: ${DD_TEXT};">
+                            ${getIconSvg('zap', DD_RED)} Action Status: ${incomeAdvice.title}
+                        </h3>
+                        <p class="italic border-l-4 border-gray-300 pl-3" style="color: ${DD_TEXT};">
+                            ${incomeAdvice.advice}
+                        </p>
+                    </div>
+                    
+                    ${savingsGap > 0 ? `
+                        <div class="pt-4 border-t" style="border-color: ${DD_ORANGE}50;">
+                            <button
+                                onclick="generateActionPlan()"
+                                ${isLoading ? 'disabled' : ''}
+                                class="w-full flex justify-center py-3 px-4 rounded-lg shadow-xl text-lg font-bold text-white transition duration-200 
+                                    ${isLoading ? 'bg-gray-400 cursor-not-allowed' : ''}
+                                "
+                                style="background-color: ${isLoading ? '#9CA3AF' : DD_RED}; box-shadow: 0 4px 6px -1px ${DD_RED}70, 0 2px 4px -2px ${DD_RED}70;"
+                            >
+                                ${isLoading ? `
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+                                    Generating High-Impact Plan...
+                                ` : `
+                                    <span>✨ Generate Aggressive Action Plan</span>
+                                `}
+                            </button>
+                        </div>
+                    ` : ''}
+                    
+                    ${apiError ? `
+                        <div class="p-3 bg-red-50 border border-red-400 text-red-700 rounded-lg">
+                            <p class="font-semibold">Error:</p>
+                            <p>${apiError}</p>
+                        </div>
+                    ` : ''}
+
+                    ${actionPlan ? `
+                        <div class="mt-6 p-6 rounded-xl shadow-inner border-l-4" style="background-color: ${DD_BLUE}10; border-color: ${DD_ORANGE};">
+                            <h4 class="text-xl font-extrabold mb-4 flex items-center" style="color: ${DD_TEXT};">
+                                ${getIconSvg('zap', DD_RED)} Your 3-Point No-Nonsense Action Plan:
+                            </h4>
+                            <div class="text-gray-700 prose max-w-none space-y-3" style="color: ${DD_TEXT};">
+                                ${processedActionPlan}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            document.getElementById('tool-content').innerHTML = renderToolCard("Income Replacement Calculator", "income", contentHtml);
+        };
+
+
+        // --- Guidance Section Render ---
+
+        const renderGuidanceSection = () => {
+            const guidanceHtml = `
+                <div class="mb-8 p-6 rounded-xl shadow-lg border-l-8" style="background-color: ${DD_BLUE}10; border-color: ${DD_ORANGE};">
+                    <button 
+                        id="guidance-toggle"
+                        class="w-full flex justify-between items-center text-left py-1 focus:outline-none"
+                    >
+                        <h2 class="text-2xl font-extrabold flex items-center" style="color: ${DD_TEXT};">
+                            ${getIconSvg('zap', DD_RED).replace('w-8 h-8', 'w-6 h-6 transform -rotate-45')}
+                            Let's Get Real: Your Secret Weapon Guide
+                        </h2>
+                        <svg id="toggle-icon" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 transform transition-transform duration-300 rotate-90" style="color: ${DD_ORANGE}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+
+                    <div id="guidance-content" class="overflow-hidden transition-all duration-500 ease-in-out max-h-screen pt-4">
+                        <div class="border-t pt-4 space-y-6" style="border-color: ${DD_ORANGE}30;">
+                            <h3 class="text-xl font-bold" style="color: ${DD_BLUE};">
+                                Why This Is Built For the Gen X Woman
+                            </h3>
+                            <p class="text-gray-700" style="color: ${DD_TEXT};">
+                                ${StyledBold('No more excuses.')} You're at your peak earning potential, but you're also likely in ${StyledBold('catch-up mode')} while simultaneously managing caregiving and your own longevity risk. This dashboard cuts the noise and forces you to face the three numbers that matter most right now:
+                            </p>
+                            <ul class="space-y-3 pl-5 list-disc text-gray-700" style="color: ${DD_TEXT};">
+                                <li>
+                                    ${StyledBold('Risk (The Leverage):')} You need to know your ${StyledBold('true')} risk tolerance so you can lean into ${StyledBold('calculated growth')} and maximize your portfolio's leverage without panic selling.
+                                </li>
+                                <li>
+                                    ${StyledBold('Time (The Longevity):')} The Time Optimizer forces you to plan for a ${StyledBold('30+ year retirement')}, demanding a smarter, growth-oriented strategy.
+                                </li>
+                                <li>
+                                    ${StyledBold('Income Gap (The Action):')} This tool shows you the ${StyledBold('exact number')} you need. If a gap exists, the Gemini feature generates a 3-point, no-BS action plan focused on ${StyledBold('digital skill monetization')} and ${StyledBold('automation')}—the ultimate Gen X advantage.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('guidance-section').innerHTML = guidanceHtml;
+
+            // Setup toggle logic
+            const guidanceContent = document.getElementById('guidance-content');
+            const toggleIcon = document.getElementById('toggle-icon');
+            let isOpen = true;
+
+            document.getElementById('guidance-toggle').addEventListener('click', () => {
+                isOpen = !isOpen;
+                guidanceContent.style.maxHeight = isOpen ? guidanceContent.scrollHeight + "px" : "0";
+                guidanceContent.style.paddingTop = isOpen ? "1rem" : "0";
+                toggleIcon.classList.toggle('rotate-90', isOpen);
+                toggleIcon.classList.toggle('rotate-0', !isOpen);
+            });
+            // Initial setting for the max-height to enable transitions
+            guidanceContent.style.maxHeight = guidanceContent.scrollHeight + "px";
+        };
+
+
+        // --- Main App Renderer ---
+
+        const renderTool = (toolId) => {
+            activeTab = toolId;
+            renderNav();
+
+            switch (toolId) {
+                case 'risk':
+                    renderRiskProfiler();
+                    break;
+                case 'time':
+                    renderTimeOptimizer();
+                    break;
+                case 'income':
+                    renderIncomeCalculator();
+                    break;
+            }
+        };
+
+        /**
+         * FIX: Updated the styling logic to ensure a clear visual change
+         * by using DD_ORANGE for the active border and DD_BLUE for active text.
+         */
+        const renderNav = () => {
+            const tabs = [
+                { id: 'risk', name: 'Risk Profiler', iconName: 'risk' },
+                { id: 'time', name: 'Time-Horizon Optimizer', iconName: 'time' },
+                { id: 'income', name: 'Income Calculator', iconName: 'income' },
+            ];
+
+            const navHtml = tabs.map((tab) => {
+                const isActive = activeTab === tab.id;
+                
+                return `
+                    <button
+                        onclick="renderTool('${tab.id}')"
+                        class="
+                            group inline-flex items-center py-4 px-2 sm:px-4 border-b-4 transition duration-150 ease-in-out
+                            ${isActive ? 'text-lg' : ''}
+                        "
+                        style="
+                            /* Ensures font weight is applied */
+                            font-weight: ${isActive ? '900' : '600'};
+                            color: ${isActive ? DD_BLUE : DD_TEXT};
+                            border-color: ${isActive ? DD_ORANGE : 'transparent'};
+                            /* Hover effect using Tailwind classes for inactive */
+                            ${!isActive ? 'border-transparent text-gray-500 hover:border-gray-300 hover:text-dd-text' : ''}
+                        "
+                    >
+                        ${getIconSvg(tab.iconName, isActive ? DD_BLUE : DD_TEXT)}
+                        <span class="hidden sm:inline">${tab.name}</span>
+                        <span class="sm:hidden">${tab.id === 'risk' ? 'Risk' : tab.id === 'time' ? 'Time' : 'Income'}</span>
+                    </button>
+                `;
+            }).join('');
+
+            document.getElementById('tab-navigation').innerHTML = navHtml;
+        };
+
+        // --- Initial Load ---
+        window.onload = function() {
+            renderGuidanceSection();
+            renderTool('income'); // Default to the most actionable tool
+        };
+    </script>
+</body>
+</html>
