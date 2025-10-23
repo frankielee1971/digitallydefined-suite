@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- UPDATED: Clean, branded Title for SEO -->
+    <title>DigitallyDefined: Your Free SEO Clarity Report</title>
+    <!-- UPDATED: Professional, clear Meta Description -->
+    <meta name="description" content="Stop guessing. Get a precise SEO clarity report from DigitallyDefined in 30 seconds. Discover the exact digital real estate strategy you need to monetize and build your legacy.">
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom Colors defined for Tailwind JIT mode */
+        :root {
+            --color-cream: #FFFCF9;   /* DigitallyDefined Background */
+            --color-orange: #F18B25;  /* DigitallyDefined Primary Orange */
+            --color-green: #47B7D4;   /* DigitallyDefined Secondary Blue (used in place of muted-green) */
+        }
+
+        /* Applying the Inter font (Tailwind default sans) and the custom background */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-cream);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Utility to ensure the custom orange is used clearly */
+        .btn-orange {
+            background-color: var(--color-orange);
+            transition: background-color 0.2s ease;
+        }
+        .btn-orange:hover {
+             background-color: #D67A20; /* Slightly darker on hover */
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'cream': '#FFFCF9', // DD Background
+                        'burnt-orange': '#F18B25', // DD Orange (CTA/Header BG)
+                        'muted-green': '#47B7D4', // DD Blue (Accent)
+                        'dd-text': '#2D3748', // DD Text Color (Black)
+                    },
+                }
+            }
+        }
+
+        // Client-side form submission logic
+        const handleSubmit = async (event) => {
+            event.preventDefault();
+            const form = event.target;
+            const url = form.elements.websiteURL.value.trim();
+            const email = form.elements.email.value.trim();
+            const messageContainer = document.getElementById('message-container');
+            const submitButton = document.getElementById('submit-btn');
+
+            messageContainer.innerHTML = ''; // Clear previous messages
+            messageContainer.classList.add('hidden');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Running Audit...';
+
+            if (!url || !email) {
+                messageContainer.innerHTML = '<div class="p-3 bg-red-100 text-red-700 rounded-lg flex items-center"><i data-lucide="alert-triangle" class="w-5 h-5 mr-2"></i>Hold up! Both website URL and email are mandatory. Let\'s get this done right.</div>';
+                lucide.createIcons();
+                messageContainer.classList.remove('hidden');
+                submitButton.disabled = false;
+                submitButton.textContent = 'Run Free Audit';
+                return;
+            }
+
+            // --- SIM AI WORKFLOW INTEGRATION START ---
+
+            // CRITICAL ACTION 1: REPLACE THIS WITH YOUR ACTUAL SIM AI API KEY!
+            const API_KEY = "[MY_SIM_API_KEY]"; 
+
+            // CRITICAL ACTION 2: REPLACE THIS WITH THE HOSTED URL OF YOUR success.html PAGE!
+            // This URL MUST point to your live GitHub Pages path for success.html
+            const RETURN_URL = "https://yourdomain.com/success"; 
+
+            // DO NOT CHANGE THESE
+            const WORKFLOW_ENDPOINT = "https://www.sim.ai/api/workflows/a6a7a4d4-733e-4f78-a34a-363c5943d904/execute";
+            const CANCEL_URL = "https://yourdomain.com/cancel";
+            const orderId = crypto.randomUUID();
+
+            const payload = {
+                "website_url": url,
+                "email": email,
+                "url": url, // Used as a primary URL identifier
+                "tone": "professional",
+                "brandName": "DigitallyDefined", // BRAND NAME
+                "brandLogo": "https://yourdomain.com/logo.png", 
+                "brandColor": "#F18B25", // BRAND COLOR (DD Orange)
+                "returnUrl": RETURN_URL,
+                "cancelUrl": CANCEL_URL,
+                "orderId": orderId,
+                "paypalAction": "create"
+            };
+
+            try {
+                const response = await fetch(WORKFLOW_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        "X-API-Key": API_KEY,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                // Sim AI returns 200/202 status code for successful execution trigger
+                if (response.ok || response.status === 202) {
+                    console.log('Sim AI Workflow executed successfully.');
+
+                    // If a valid returnUrl is provided, redirect the user immediately
+                    if (RETURN_URL && RETURN_URL !== "https://yourdomain.com/success" && RETURN_URL !== "https://yourdomain.com/cancel") {
+                         window.location.href = RETURN_URL;
+                         return; // Stop execution after redirect
+                    }
+
+                    // Show success message if no redirect is configured
+                    messageContainer.innerHTML = `
+                        <div class="p-4 bg-muted-green text-cream rounded-lg shadow-xl border-2 border-burnt-orange transition-all duration-300">
+                            <div class="flex items-center">
+                                <i data-lucide="check-circle" class="w-6 h-6 mr-3"></i>
+                                <p class="font-bold text-lg">Success! Audit Workflow Started.</p>
+                            </div>
+                            <p class="mt-2 text-sm">Your data has been sent to the AI system. Check your inbox (**${email}**) shortly for your full report. Get ready for clarity!</p>
+                        </div>
+                    `;
+                    form.reset();
+                    messageContainer.classList.remove('hidden');
+
+                } else {
+                    // Handle HTTP errors (4xx, 5xx)
+                    const errorText = await response.text();
+                    let errorMessage = `Execution Failed (Status: ${response.status}). Details: ${errorText.substring(0, 100)}...`;
+                    
+                    // --- EDIT START: Specific instructions for 401 Unauthorized Error ---
+                    if (response.status === 401) {
+                         errorMessage = "Authorization Failed (Status 401). Please ensure you have replaced `[MY_SIM_API_KEY]` with a valid and active Sim AI API Key (Critical Action 1). Your key may be invalid or expired.";
+                    }
+                    // --- EDIT END ---
+                    
+                    throw new Error(errorMessage);
+                }
+
+            } catch (error) {
+                // Handle network errors or errors thrown above
+                console.error("API Call Error:", error);
+                messageContainer.innerHTML = `<div class="p-3 bg-red-100 text-red-700 rounded-lg flex items-center"><i data-lucide="x-circle" class="w-5 h-5 mr-2"></i>Uh oh, Workflow execution snagged! Error: ${error.message}</div>`;
+                messageContainer.classList.remove('hidden');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Run Free Audit';
+                lucide.createIcons();
+            }
+        };
+
+        // Initialize icons on load
+        window.onload = () => {
+             lucide.createIcons();
+        }
+    </script>
+</head>
+<body class="text-dd-text">
+    <main class="flex-grow container mx-auto p-4 sm:p-8 lg:p-12">
+        <div class="max-w-3xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden transform transition-all duration-500 hover:shadow-burnt-orange/50">
+            <!-- Header Section (Uses DD Blue Background, Cream Text, Cream Icon) -->
+            <header class="p-6 sm:p-10 bg-muted-green text-cream rounded-t-2xl border-b-4 border-burnt-orange/50">
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight flex items-center">
+                    <!-- Icon in Cream/White -->
+                    <i data-lucide="zap" class="w-8 h-8 mr-4 text-cream fill-cream"></i>
+                    Get Your SEO Score in 30 Seconds
+                </h1>
+                <!-- UPDATED SUBHEADLINE: Bolding is now correctly applied with <b> tags and text is white/cream -->
+                <p class="mt-3 text-lg sm:text-xl font-medium opacity-90 text-cream">
+                    You're here for <b>leverage</b>, not luck. Drop your URL and email below for the no-fluff report that tells you exactly where to focus. Get the <b>data</b>, <b>own the results</b>.
+                </p>
+            </header>
+
+            <!-- Main Content / Form Section -->
+            <div class="p-6 sm:p-10">
+                <h2 class="text-2xl font-bold text-muted-green mb-6 border-b-2 border-burnt-orange/30 pb-2">
+                    Time to get clear. Let's get real.
+                </h2>
+
+                <!-- Success/Error Message Container -->
+                <div id="message-container" class="mb-6 hidden">
+                    <!-- Dynamic messages will appear here -->
+                </div>
+
+                <!-- Audit Form -->
+                <form id="audit-form" class="space-y-6" onsubmit="handleSubmit(event)">
+                    <div>
+                        <label for="websiteURL" class="block text-sm font-semibold text-dd-text mb-1 flex items-center">
+                            <i data-lucide="link" class="w-4 h-4 mr-2 text-burnt-orange"></i>
+                            Your Website URL (We need the good stuff)
+                        </label>
+                        <input
+                            type="url"
+                            id="websiteURL"
+                            name="websiteURL"
+                            placeholder="https://yourdomain.com"
+                            required
+                            class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-lg focus:ring-burnt-orange focus:border-burnt-orange transition duration-150 text-dd-text placeholder-gray-500"
+                        />
+                    </div>
+
+                    <div>
+                        <label for="email" class="block text-sm font-semibold text-dd-text mb-1 flex items-center">
+                            <i data-lucide="mail" class="w-4 h-4 mr-2 text-burnt-orange"></i>
+                            Best Email (Where we'll send the data)
+                        </label>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            placeholder="you@yourbusiness.com"
+                            required
+                            class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-lg focus:ring-burnt-orange focus:border-burnt-orange transition duration-150 text-dd-text placeholder-gray-500"
+                        />
+                    </div>
+
+                    <!-- CTA Button (Uses DD Orange) -->
+                    <button
+                        type="submit"
+                        id="submit-btn"
+                        class="w-full btn-orange text-white font-extrabold py-3.5 px-4 rounded-xl shadow-lg uppercase tracking-wider text-lg transform hover:scale-[1.01] active:scale-95 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-burnt-orange/50"
+                    >
+                        Run Free Audit
+                    </button>
+                </form>
+
+                <!-- Custom HTML Block for Audit Agent Script -->
+                <div class="mt-10 pt-6 border-t-2 border-muted-green/20">
+                    <h3 class="text-xl font-bold text-muted-green mb-3">
+                        <!-- Instructions for the user -->
+                        Audit Agent Integration Point
+                    </h3>
+                    <p class="text-sm text-gray-500 mb-4 italic">
+                        The block below is ready for your custom script. Paste your full, self-contained HTML/JS snippet here.
+                    </p>
+                    <div id="custom-audit-agent-block" class="p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 text-gray-600 text-center text-sm min-h-[100px] flex items-center justify-center">
+                        <!-- PASTE YOUR CUSTOM AUDIT AGENT SCRIPT/WIDGET CODE HERE -->
+                        <p class="italic">Your external audit agent script will load here.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer - Now DigitallyDefined -->
+    <footer class="mt-8 py-4 px-4 sm:px-8 text-center text-sm text-dd-text border-t border-muted-green/20 bg-cream/50">
+        Built with clarity by <b class="font-extrabold">DigitallyDefined</b>
+    </footer>
+</body>
+</html>
