@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Updated Title for the Gen X boss -->
-    <title>Stop Guessing, Queen: Free SEO Audit for the Gen X Boss.</title>
-    <!-- New Cheeky Meta Description -->
-    <meta name="description" content="You built the business. Now, find the cracks holding you back. Get a no-BS SEO Score in 30 seconds and start dominating your niche. Clarity is the new currency.">
+    <!-- UPDATED: Clean, branded Title for SEO -->
+    <title>DigitallyDefined: Your Free SEO Clarity Report</title>
+    <!-- UPDATED: Professional, clear Meta Description -->
+    <meta name="description" content="Stop guessing. Get a precise SEO clarity report from DigitallyDefined in 30 seconds. Discover the exact digital real estate strategy you need to monetize and build your legacy.">
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Load Lucide Icons -->
@@ -43,9 +43,9 @@
                 extend: {
                     colors: {
                         'cream': '#FFFCF9', // DD Background
-                        'burnt-orange': '#F18B25', // DD Orange (CTA)
-                        'muted-green': '#47B7D4', // DD Blue (Header BG/Accent)
-                        'dd-text': '#2D3748', // DD Text Color
+                        'burnt-orange': '#F18B25', // DD Orange (CTA/Header BG)
+                        'muted-green': '#47B7D4', // DD Blue (Accent)
+                        'dd-text': '#2D3748', // DD Text Color (Black)
                     },
                 }
             }
@@ -76,13 +76,16 @@
 
             // --- SIM AI WORKFLOW INTEGRATION START ---
 
-            // !!! IMPORTANT: REPLACE THESE PLACEHOLDERS WITH YOUR ACTUAL VALUES !!!
-            const WORKFLOW_ENDPOINT = "https://www.sim.ai/api/workflows/[MY_WORKFLOW_ID]/execute";
-            const API_KEY = "[MY_SIM_API_KEY]";
-            const RETURN_URL = "https://yourdomain.com/success";
+            // CRITICAL ACTION 1: REPLACE THIS WITH YOUR ACTUAL SIM AI API KEY!
+            const API_KEY = "[MY_SIM_API_KEY]"; 
+
+            // CRITICAL ACTION 2: REPLACE THIS WITH THE HOSTED URL OF YOUR success.html PAGE!
+            // This URL MUST point to your live GitHub Pages path for success.html
+            const RETURN_URL = "https://yourdomain.com/success"; 
+
+            // DO NOT CHANGE THESE
+            const WORKFLOW_ENDPOINT = "https://www.sim.ai/api/workflows/a6a7a4d4-733e-4f78-a34a-363c5943d904/execute";
             const CANCEL_URL = "https://yourdomain.com/cancel";
-            
-            // Generate a unique ID for the order
             const orderId = crypto.randomUUID();
 
             const payload = {
@@ -90,9 +93,9 @@
                 "email": email,
                 "url": url, // Used as a primary URL identifier
                 "tone": "professional",
-                "brandName": "DigitallyDefined", // BRAND NAME UPDATED HERE
+                "brandName": "DigitallyDefined", // BRAND NAME
                 "brandLogo": "https://yourdomain.com/logo.png", 
-                "brandColor": "#F18B25", // BRAND COLOR UPDATED HERE (DD Orange)
+                "brandColor": "#F18B25", // BRAND COLOR (DD Orange)
                 "returnUrl": RETURN_URL,
                 "cancelUrl": CANCEL_URL,
                 "orderId": orderId,
@@ -135,7 +138,15 @@
                 } else {
                     // Handle HTTP errors (4xx, 5xx)
                     const errorText = await response.text();
-                    throw new Error(`Execution Failed (Status: ${response.status}). Details: ${errorText.substring(0, 100)}...`);
+                    let errorMessage = `Execution Failed (Status: ${response.status}). Details: ${errorText.substring(0, 100)}...`;
+                    
+                    // --- EDIT START: Specific instructions for 401 Unauthorized Error ---
+                    if (response.status === 401) {
+                         errorMessage = "Authorization Failed (Status 401). Please ensure you have replaced `[MY_SIM_API_KEY]` with a valid and active Sim AI API Key (Critical Action 1). Your key may be invalid or expired.";
+                    }
+                    // --- EDIT END ---
+                    
+                    throw new Error(errorMessage);
                 }
 
             } catch (error) {
@@ -159,14 +170,16 @@
 <body class="text-dd-text">
     <main class="flex-grow container mx-auto p-4 sm:p-8 lg:p-12">
         <div class="max-w-3xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden transform transition-all duration-500 hover:shadow-burnt-orange/50">
-            <!-- Header Section (Uses DD Blue) -->
-            <header class="p-6 sm:p-10 bg-muted-green text-cream rounded-t-2xl">
-                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight">
+            <!-- Header Section (Uses DD Blue Background, Cream Text, Cream Icon) -->
+            <header class="p-6 sm:p-10 bg-muted-green text-cream rounded-t-2xl border-b-4 border-burnt-orange/50">
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight flex items-center">
+                    <!-- Icon in Cream/White -->
+                    <i data-lucide="zap" class="w-8 h-8 mr-4 text-cream fill-cream"></i>
                     Get Your SEO Score in 30 Seconds
                 </h1>
-                <!-- UPDATED SUBHEADLINE HERE -->
-                <p class="mt-3 text-lg sm:text-xl font-medium opacity-90">
-                    You're a boss, not a blogger. Drop your URL and email below for the no-fluff report that tells you exactly where to focus. Get the data, own the results.
+                <!-- UPDATED SUBHEADLINE: Bolding is now correctly applied with <b> tags and text is white/cream -->
+                <p class="mt-3 text-lg sm:text-xl font-medium opacity-90 text-cream">
+                    You're here for <b>leverage</b>, not luck. Drop your URL and email below for the no-fluff report that tells you exactly where to focus. Get the <b>data</b>, <b>own the results</b>.
                 </p>
             </header>
 
@@ -244,7 +257,7 @@
 
     <!-- Footer - Now DigitallyDefined -->
     <footer class="mt-8 py-4 px-4 sm:px-8 text-center text-sm text-dd-text border-t border-muted-green/20 bg-cream/50">
-        Built with clarity by **DigitallyDefined**
+        Built with clarity by <b class="font-extrabold">DigitallyDefined</b>
     </footer>
 </body>
 </html>
